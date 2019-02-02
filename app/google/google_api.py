@@ -15,17 +15,20 @@ class GoogleAPI:
         
         credentials: Credentials = None
 
-        if path.exists('token.pickle'):
-            with open('token.pickle', 'rb') as token:
+        if path.exists('credentials/token.pickle'):
+            with open('credentials/token.pickle', 'rb') as token:
                credentials = pickle.load(token)
 
         if not credentials or not credentials.valid:
             if credentials and credentials.expired and credentials.refresh_token:
                 credentials.refresh(Request())
             else:
-                flow: InstalledAppFlow = InstalledAppFlow.from_client_secrets_file('credentials.json', scope)
+                flow: InstalledAppFlow = InstalledAppFlow.from_client_secrets_file(
+                    'credentials/google_credentials.json',
+                    scope
+                )
                 credentials = flow.run_local_server()
-            with open('token.pickle', 'wb') as token:
+            with open('credentials/token.pickle', 'wb') as token:
                pickle.dump(credentials, token)
 
         self._service: Resource = build(service_name, 'v4', credentials=credentials) 
