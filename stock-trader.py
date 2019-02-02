@@ -12,5 +12,5 @@ def main() -> None:
 
     start_app({ constant: environ.get(constant) for constant in ENV_CONSTANTS })
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
