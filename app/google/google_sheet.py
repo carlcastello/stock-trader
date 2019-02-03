@@ -4,28 +4,43 @@ from .google_api import GoogleAPI
 
 class GoogleSheet(GoogleAPI):
 
-    def __init__(self, sheet_id: str) -> None:
+    def __init__(self, spread_sheet_id: str) -> None:
         super().__init__('sheets', 'https://www.googleapis.com/auth/spreadsheets')
         
-        self._worksheet = self._service.spreadsheets().values()
-        self._sheet_id = sheet_id
+        self._worksheet = self._service.spreadsheets()
+        self._spread_sheet_id: str = spread_sheet_id
 
     def write(self, range: str, values: List[List[Any]], value_input_option: str = 'USER_ENTERED') -> None:
         self.execute(
-            self._worksheet.update,
-            spreadsheetId=self._sheet_id,
+            self._worksheet.values().update,
+            spreadsheetId=self._spread_sheet_id,
             range=range,
             valueInputOption=value_input_option,
-            body={'values': values}
+            body={'values': values},
         )
   
     def read(self, range: str) -> Optional[List[List[Any]]]:
         result: Optional[Dict[str, Any]] =  self.execute(
-            self._worksheet.get,
-            spreadsheetId=self._sheet_id,
+            self._worksheet.values().get,
+            spreadsheetId=self._spread_sheet_id,
             range=range
         )
         return result.get('values') if result else None
 
-    def create(self) -> None:
-        pass
+    def create_sheet(self, title) -> None:
+        self.execute(
+            self._worksheet.batchUpdate,
+            spreadsheetId=self._spread_sheet_id,
+            body={
+                'requests': [{
+                    'addSheet': {
+                        'properties': {
+                            'title': title,
+                            'gridProperties': {
+                                'columnCount': 2
+                            }
+                        }
+                    }
+                }]
+            }
+        )

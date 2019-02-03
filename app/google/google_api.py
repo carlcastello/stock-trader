@@ -13,9 +13,7 @@ from google.auth.transport.requests import Request
 
 class GoogleAPI:
 
-    def __init__(self, service_name: str, scope: str):
-        # https://developers.google.com/sheets/api/quickstart/python
-        
+    def __init__(self, service_name: str, scope: str):        
         credentials: Credentials = None
 
         if path.exists('credentials/token.pickle'):
