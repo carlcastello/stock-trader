@@ -18,7 +18,7 @@ class GoogleSheet(GoogleAPI):
             valueInputOption=value_input_option,
             body={'values': values},
         )
-  
+
     def read(self, range: str) -> Optional[List[List[Any]]]:
         result: Optional[Dict[str, Any]] =  self.execute(
             self._worksheet.values().get,
@@ -27,7 +27,7 @@ class GoogleSheet(GoogleAPI):
         )
         return result.get('values') if result else None
 
-    def create_sheet(self, title) -> None:
+    def create_sheet(self, title: str) -> None:
         self.execute(
             self._worksheet.batchUpdate,
             spreadsheetId=self._spread_sheet_id,
