@@ -1,43 +1,49 @@
 import logging
+from sched import scheduler as Scheduler
+from time import time, sleep
 from pytz import timezone
 from datetime import datetime
 
-from typing import Dict, Optional, Any, List
+from typing import Dict, Optional, Any, List, Tuple, Union
 
-from constants import GOOGLE_SPREAD_SHEET_ID
+from app.constants import CONFIG_PLACEMENT
+from app.trader import Trader
 from app.google.google_sheet import GoogleSheet
 
-TIME_ZONE: str = ''
+TIMEZONE: str = ''
+OPENING_HOURS: str = ''
+CLOSING_HOURS: str = ''
+INTEVAL: int = 0
 
+def get_trading_config(google_sheet: GoogleSheet) -> Optional[List[Any]]:
+    global TIMEZONE, OPENING_HOURS, CLOSING_HOURS, INTEVAL
 
-def get_time_zone(google_sheet: GoogleSheet) -> None:
-    global TIME_ZONE
+    values: Optional[List[List[Any]]] = google_sheet.read(
+        CONFIG_PLACEMENT,
+        major_dimension='COLUMNS'
+    )
+
+    if values:
+        TIMEZONE, OPENING_HOURS, CLOSING_HOURS, INTEVAL = values[0]
+        return values[0]
     
-    if not TIME_ZONE:
-        value: Optional[List[List[str]]] = google_sheet.read('Config!B2')
-        if value and value[0]:
-            TIME_ZONE = value[0][0]
-        else:
-            logging.critical('Could not find TIME_ZONE. Program terminated.')
-            
+    return None
 
-def start_app(trade_spread_sheet_id: str) -> None: 
+def analyze_price(historical_sheet: GoogleSheet) -> None:
+    pass
+
+def start_app(trade_spread_sheet_id: str, historical_spread_sheet_id: str) -> None:
+    scheduler: Scheduler = Scheduler(time, sleep)
+
     trade_sheet: GoogleSheet = GoogleSheet(trade_spread_sheet_id)
-    get_time_zone(trade_sheet)
+    historical_sheet: GoogleSheet = GoogleSheet(historical_spread_sheet_id)
 
-    date: str = datetime.now(timezone(TIME_ZONE)).strftime('%Y-%m-%d')
-    trade_sheet.create_sheet(date)
+    get_trading_config(trade_sheet)
 
-    #  google_sheet: GoogleSheet = GoogleSheet(spread_sheet_id)
+    def loop() -> None:
+        analyze_price(historical_sheet)
+        scheduler.enter(INTEVAL, 1, loop, ())
 
-    # print(datetime.now(timezone('Canada/Eastern')).weekday())
-    # trade_spread_sheet_id: Optional[str] = config.get(GOOGLE_SPREAD_SHEET_ID)
-    # if trade_spread_sheet_id:
-    #     google_sheet: GoogleSheet = GoogleSheet(trade_spread_sheet_id)
-
-    #     if not time_zone:
-    #         time_zone = 
-
-#         google_sheet.write('Config!A2', [['CARL']])
-#         google_sheet.read('A1')2
-#         google_sheet.create_sheet('Hello')
+    if TIMEZONE and OPENING_HOURS and CLOSING_HOURS and INTEVAL:
+        scheduler.enter(INTEVAL, 1, loop, ())
+        scheduler.run()

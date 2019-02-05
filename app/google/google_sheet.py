@@ -11,7 +11,7 @@ class GoogleSheet(GoogleAPI):
         self._spread_sheet_id: str = spread_sheet_id
 
     def write(self, range: str, values: List[List[Any]], value_input_option: str = 'USER_ENTERED') -> None:
-        self.execute(
+        self._execute(
             self._worksheet.values().update,
             spreadsheetId=self._spread_sheet_id,
             range=range,
@@ -19,16 +19,18 @@ class GoogleSheet(GoogleAPI):
             body={'values': values},
         )
 
-    def read(self, range: str) -> Optional[List[List[Any]]]:
-        result: Optional[Dict[str, Any]] =  self.execute(
+    def read(self, range: str, major_dimension: str = 'ROWS', **kwargs: str) -> Optional[List[List[Any]]]:
+        result: Optional[Dict[str, Any]] =  self._execute(
             self._worksheet.values().get,
             spreadsheetId=self._spread_sheet_id,
-            range=range
+            range=range,
+            majorDimension=major_dimension,
+            **kwargs
         )
         return result.get('values') if result else None
 
     def create_sheet(self, title: str) -> None:
-        self.execute(
+        self._execute(
             self._worksheet.batchUpdate,
             spreadsheetId=self._spread_sheet_id,
             body={

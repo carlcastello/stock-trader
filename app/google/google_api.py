@@ -34,7 +34,7 @@ class GoogleAPI:
         self.service_name: str = service_name
         self._service: Resource = build(self.service_name, 'v4', credentials=credentials) 
 
-    def execute(self, callable: Callable[..., Any], **kwargs: Any) -> Any:
+    def _execute(self, callable: Callable[..., Any], **kwargs: Any) -> Any:
         try:
             return callable(**kwargs).execute()
         except HttpError as error:
