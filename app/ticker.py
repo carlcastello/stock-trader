@@ -23,20 +23,20 @@ class Ticker:
             self._current_date_time: DateTime = DateTime.now(self._timezone)
 
         self.__long_term_update()
-        self.__short_term_update()
+        self.__short_term_update(DateTime.now(self._timezone))
 
-    def __short_term_update(self) -> None:
+    def __short_term_update(self, current_date_time: DateTime) -> None:
         """
             Short Term Update == Update as frequent as posible 
         """
-        self._current_date_time = DateTime.now(self._timezone)
+        self._current_date_time = current_date_time
 
         should_trade_result: Optional[List[List[str]]] = self._config_spread_sheet.read('B10')
         if should_trade_result and should_trade_result[0] and should_trade_result[0][0]: 
             self._should_trade = should_trade_result[0][0] == 'TRUE'
 
-
-
+        if self._current_date_time < self._opening_hours and self._current_date_time > self._closing_hours:
+            self._should_trade = False
 
     def __long_term_update(self) -> None:
         """
@@ -56,11 +56,11 @@ class Ticker:
                 self._opening_hours: DateTime = DateTime.strptime(
                     f'{self._current_date_time.date()} {opening_hours}',
                     '%Y-%m-%d %I:%M %p'
-                )
+                ).replace(tzinfo=self._timezone)
                 self._closing_hours: DateTime = DateTime.strptime(
                     f'{self._current_date_time.date()} {closing_hours}',
                     '%Y-%m-%d %I:%M %p'
-                )
+                ).replace(tzinfo=self._timezone)
 
             interval_value: List[List[str]] = config[1]
             if interval_value and interval_value[0] and interval_value[0][0]:
@@ -75,11 +75,10 @@ class Ticker:
         if self._current_date_time.date() != current_date_time.date():
             self.__long_term_update()
 
-        self.__short_term_update()
+        self.__short_term_update(current_date_time)
 
-        
-
-        self._ticker_callback(self._current_date_time)
+        if self._should_trade:        
+            self._ticker_callback(self._current_date_time)
 
         self._scheduler.enter(self._interval, 1, self._ticker, ())
 
