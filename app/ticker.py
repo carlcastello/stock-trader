@@ -11,9 +11,9 @@ class Ticker:
 
     def __init__(self,
                  config_spread_sheet: GoogleSheet,
-                 ticker_callbak: Callable[[DateTime], Any]):
+                 ticker_callbak: Callable[[DateTime, bool], Any]):
 
-        self._ticker_callback: Callable[[DateTime], Any] = ticker_callbak
+        self._ticker_callback: Callable[[DateTime, bool], Any] = ticker_callbak
         self._config_spread_sheet: GoogleSheet = config_spread_sheet
         self._scheduler: Scheduler = Scheduler(time, sleep)
 
@@ -35,7 +35,9 @@ class Ticker:
         if should_trade_result and should_trade_result[0] and should_trade_result[0][0]: 
             self._should_trade = should_trade_result[0][0] == 'TRUE'
 
-        if self._current_date_time < self._opening_hours and self._current_date_time > self._closing_hours:
+        if self._current_date_time < self._opening_hours and \
+            self._current_date_time > self._closing_hours and \
+            self._current_date_time.weekday() >= 5:
             self._should_trade = False
 
     def __long_term_update(self) -> None:
@@ -70,15 +72,18 @@ class Ticker:
                     self._interval = 60
 
     def _ticker(self) -> None:
+        print('asdadssd')
+        new_day: bool = False
         current_date_time: DateTime = DateTime.now(self._timezone)
 
         if self._current_date_time.date() != current_date_time.date():
+            new_day = True
             self.__long_term_update()
 
         self.__short_term_update(current_date_time)
 
         if self._should_trade:        
-            self._ticker_callback(self._current_date_time)
+            self._ticker_callback(self._current_date_time, new_day)
 
         self._scheduler.enter(self._interval, 1, self._ticker, ())
 

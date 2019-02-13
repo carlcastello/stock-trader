@@ -17,8 +17,10 @@ def _initialize_sheet(trade_spread_sheet_id: str,
     TRADE_SHEET = GoogleSheet(trade_spread_sheet_id)
     HISTORICAL_SHEET = GoogleSheet(historical_spread_sheet_id)
 
-def _ticker_callback(now: DateTime) -> None:
-    print(now)
+def _ticker_callback(now: DateTime, new_day: bool=True) -> None:
+    if new_day:
+        pass
+        
 
 def start_app(config_spread_sheet_id: str,
               trade_spread_sheet_id: str,
