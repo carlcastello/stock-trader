@@ -8,14 +8,17 @@ from app.constants import CONFIG_PLACEMENT, TIMEZONE, OPENING_HOURS, CLOSING_HOU
 
 TRADE_SHEET: Optional[GoogleSheet] = None
 HISTORICAL_SHEET: Optional[GoogleSheet] = None
+CONFIG_SHEET: Optional[GoogleSheet] = None
 
-def _initialize_sheet(trade_spread_sheet_id: str,
+def _initialize_sheet(config_spread_sheet_id: str,
+                      trade_spread_sheet_id: str,
                       historical_spread_sheet_id: str) -> None:
 
     global CONFIG_SHEET, TRADE_SHEET, HISTORICAL_SHEET
 
     TRADE_SHEET = GoogleSheet(trade_spread_sheet_id)
     HISTORICAL_SHEET = GoogleSheet(historical_spread_sheet_id)
+    CONFIG_SHEET = GoogleSheet(config_spread_sheet_id)
 
 def _ticker_callback(now: DateTime, new_day: bool=True) -> None:
     if new_day:
@@ -26,8 +29,8 @@ def start_app(config_spread_sheet_id: str,
               trade_spread_sheet_id: str,
               historical_spread_sheet_id: str) -> None:
 
-    _initialize_sheet(trade_spread_sheet_id, historical_spread_sheet_id)
+    _initialize_sheet(config_spread_sheet_id, trade_spread_sheet_id, historical_spread_sheet_id)
 
-    if TRADE_SHEET and HISTORICAL_SHEET:
+    if CONFIG_SHEET and TRADE_SHEET and HISTORICAL_SHEET:
         ticker: Ticker = Ticker(GoogleSheet(config_spread_sheet_id), _ticker_callback)
         ticker.run()

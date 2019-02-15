@@ -1,6 +1,6 @@
 from typing import List, Any, Optional, Dict
 
-from .google_api import GoogleAPI
+from app.google.google_api import GoogleAPI
 
 # class ValueRange: 
     
@@ -15,6 +15,39 @@ from .google_api import GoogleAPI
 #             'majorDimension': self._major_dimension,
 #             **self._kwargs,
 #         }
+
+class Result:
+
+    def __init__(self, result: List[List[str]]):
+        self._row: List[List[str]] = result
+        self._column: List[List[str]] = [[row[i] for row in result] for i in range(len(result[0]))]
+
+    def value(self, row_index: int, column_index: int, default: Optional[str] = None) -> str:
+        try:
+            return self._row[row_index][column_index]
+        except IndexError as exception:
+            if default:
+                return default
+            raise Exception('Unexpected behavior reached. Trying to index unknown value.')
+
+    def rows(self) -> List[List[str]]:
+        return self._row
+
+    def row(self, index: int) -> List[str]:
+        try:
+            return self._row[index]
+        except IndexError:
+            return []
+
+    def column(self) -> List[List[str]]:
+        return self._column
+
+    def column(self, index: int) -> List[Any]:
+        try:
+            return self._column[index]
+        except IndexError:
+            return []
+
 
 class GoogleSheet(GoogleAPI):
 
@@ -33,32 +66,27 @@ class GoogleSheet(GoogleAPI):
             body={'values': values},
         )
 
-    def batch_read(self, ranges: List[str], major_dimension: str = 'ROWS', **kwargs: str) -> Optional[List[List[List[Any]]]]:
-        results: Optional[Dict[str, Any]] = self._execute(
+    def batch_read(self, *ranges: str, **kwargs: str) -> List[Result]:
+        results: Dict[str, Any] = self._execute(
             self._worksheet.values().batchGet,
             spreadsheetId=self._spread_sheet_id,
-            ranges=ranges,
-            majorDimension=major_dimension,
+            ranges=list(ranges),
             **kwargs
         )
-
-        if results:
-            return [
-                result.get('values')
-                for result in results.get('valueRanges', []) if result.get('values')
-            ]
-        
-        return None
-
-    def read(self, range: str, major_dimension: str = 'ROWS', **kwargs: str) -> Optional[List[List[Any]]]:
-        result: Optional[Dict[str, Any]] =  self._execute(
+        return [
+            Result(result.get('values', [[]]))
+            for result in results.get('valueRanges', [])
+        ]
+    
+    def read(self, range: str, **kwargs: str) -> Result:
+        result: Dict[str, Any] =  self._execute(
             self._worksheet.values().get,
             spreadsheetId=self._spread_sheet_id,
             range=range,
-            majorDimension=major_dimension,
             **kwargs
         )
-        return result.get('values') if result else None
+
+        return Result(result.get('values', [[]]))
 
     def create_sheet(self, title: str) -> None:
         self._execute(

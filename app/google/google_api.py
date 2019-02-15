@@ -2,7 +2,7 @@ import pickle
 import logging
 from os import path
 
-from typing import List, Any, Callable, Dict
+from typing import List, Any, Callable, Dict, Optional
 
 from googleapiclient.discovery import build, Resource
 from googleapiclient.errors import HttpError
@@ -40,4 +40,3 @@ class GoogleAPI:
         except HttpError as error:
             logging.critical(f'Unexpected response for `{self.service_name.upper()}`: {error}')
             raise error
-        return {}
