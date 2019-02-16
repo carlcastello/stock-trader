@@ -20,9 +20,16 @@ def _initialize_sheet(config_spread_sheet_id: str,
     HISTORICAL_SHEET = GoogleSheet(historical_spread_sheet_id)
     CONFIG_SHEET = GoogleSheet(config_spread_sheet_id)
 
+
 def _ticker_callback(now: DateTime, new_day: bool=True) -> None:
-    if new_day:
-        pass
+    global TRADE_SHEET, HISTORICAL_SHEET
+    date_string: str = now.strftime('%Y-%m-%d')
+    if new_day and TRADE_SHEET and HISTORICAL_SHEET:
+        
+        HISTORICAL_SHEET.create_sheet(date_string)
+        TRADE_SHEET.create_sheet(date_string)
+    # print('Callback  : ', DateTime.now())
+
         
 
 def start_app(config_spread_sheet_id: str,
