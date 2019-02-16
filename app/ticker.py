@@ -1,5 +1,4 @@
 import logging
-from multiprocessing import Process
 from threading import Thread
 from time import time, sleep
 from sched import scheduler as Scheduler
@@ -51,7 +50,7 @@ class Ticker:
 
     def _ticker(self) -> None:
         if self._should_callback:
-            Process(target=self._ticker_callback, args=(self._current_date_time, True)).start()
+            self._ticker_callback(self._current_date_time, True)
 
         self._scheduler.enter(self._interval, 1, self._ticker, ())
 

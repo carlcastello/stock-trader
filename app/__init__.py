@@ -34,7 +34,8 @@ def _ticker_callback(now: DateTime, new_day: bool=True) -> None:
 
 def start_app(config_spread_sheet_id: str,
               trade_spread_sheet_id: str,
-              historical_spread_sheet_id: str) -> None:
+              historical_spread_sheet_id: str,
+              alpha_vantage_id: str) -> None:
 
     _initialize_sheet(config_spread_sheet_id, trade_spread_sheet_id, historical_spread_sheet_id)
 
