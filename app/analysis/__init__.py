@@ -1,0 +1,3 @@
+
+def analysis() -> None:
+    pass

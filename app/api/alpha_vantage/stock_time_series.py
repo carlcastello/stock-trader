@@ -29,10 +29,10 @@ class StockTimeSeries(API):
 
         return [
             TimeSeries(timestamp=key,
-                       open=value.get('1. open'),
-                       high=value.get('2. high'),
-                       low=value.get('3. low'),
-                       close=value.get('4. close'),
-                       volume=value.get('5. volume'))
+                       open=value.get('1. open', '0'),
+                       high=value.get('2. high', '0'),
+                       low=value.get('3. low', '0'),
+                       close=value.get('4. close', '0'),
+                       volume=value.get('5. volume', '0'))
             for key, value in time_series.items()
         ]
