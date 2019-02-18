@@ -14,11 +14,12 @@ class Ticker:
     _should_callback = False
 
     def __init__(self,
-                 config_spread_sheet: GoogleSheet,
-                 ticker_callbak: Callable[[DateTime, bool], Any]):
+                 config_spread_sheet_id: str,
+                 ticker_callbak: Callable[[DateTime, float], None]):
 
-        self._ticker_callback: Callable[[DateTime, bool], Any] = ticker_callbak
-        self._config_spread_sheet: GoogleSheet = config_spread_sheet
+        self._config_spread_sheet: GoogleSheet = GoogleSheet(config_spread_sheet_id)
+
+        self._ticker_callback: Callable[[DateTime, float], Any] = ticker_callbak
         self._scheduler: Scheduler = Scheduler(time, sleep)
 
         results: List[Result] = self._config_spread_sheet.batch_read('B2', 'B7', 'B3:B4')
@@ -50,7 +51,7 @@ class Ticker:
 
     def _ticker(self) -> None:
         if self._should_callback:
-            self._ticker_callback(self._current_date_time, True)
+            self._ticker_callback(self._current_date_time, self._interval)
 
         self._scheduler.enter(self._interval, 1, self._ticker, ())
 
