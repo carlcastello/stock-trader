@@ -1,6 +1,7 @@
+import logging
 from datetime import datetime as DateTime
 
-from typing import List, Any, Dict
+from typing import Any, Dict, Tuple, Union
 
 from app.api import API
 from app.analysis.time_series import TimeSeries
@@ -22,17 +23,25 @@ class StockTimeSeries(API):
         }
 
     def get(self) -> Any:
+        def parse_data(key: str, value: Dict[str, str]) -> Tuple[DateTime, float, float, float, float, float]:
+            try:
+                return \
+                    DateTime.strptime(key, '%Y-%m-%d %H:%M:%S'), \
+                    float(value.get('1. open', '0')), \
+                    float(value.get('2. high', '0')), \
+                    float(value.get('3. low', '0')), \
+                    float(value.get('4. close', '0')), \
+                    float(value.get('5. volume', '0'))
+            except ValueError as exception:
+                logging.critical('Incompatible data shape.')
+                raise exception
+
         response: Any = super()._get(self.url, fields=self._params)
         if response.get('Error Message'):
-            raise Exception('Alpha Vantage: Someting went wrong')
+            raise Exception(response.get('Error Message'))
         time_series: Dict[str, Dict[str, str]] = response.get(f'Time Series ({self._interval})', {})
 
         return [
-            TimeSeries(timestamp=key,
-                       open=value.get('1. open', '0'),
-                       high=value.get('2. high', '0'),
-                       low=value.get('3. low', '0'),
-                       close=value.get('4. close', '0'),
-                       volume=value.get('5. volume', '0'))
+            parse_data(key, value)
             for key, value in time_series.items()
         ]
