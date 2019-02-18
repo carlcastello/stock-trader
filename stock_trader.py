@@ -1,3 +1,4 @@
+from argparse import ArgumentParser
 from os import path, environ
 from dotenv import load_dotenv
 
@@ -7,7 +8,10 @@ from app import start_app
 from constants import SYMBOL, COFING_SPREAD_SHEET_ID, ALPHA_VANTAGE_ID
 
 def main() -> None:
-    dotenv_path = path.join(path.dirname(__file__), 'env/.tesla')
+    parser: ArgumentParser = ArgumentParser(description='Stock Trader program.')
+    parser.add_argument('symbol', type=str, help='The stock symbol.')
+
+    dotenv_path = path.join(path.dirname(__file__), f'env/.{parser.parse_args().symbol}')
     load_dotenv(dotenv_path)
 
     alpha_vantage_id: str = environ.get(ALPHA_VANTAGE_ID, '')
