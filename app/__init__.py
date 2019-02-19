@@ -19,7 +19,7 @@ def start_app(symbol: str, config_spread_sheet_id: str, alpha_vantage_id: str) -
         if not time_stock_series_df:
             time_stock_series_df = DataFrame(
                 stock_time_series.get(),
-                columns=['DateTime', 'Open', 'High', 'Low', 'Close', 'Volume']
+                columns=['Open', 'High', 'Low', 'Close', 'Volume']
             )
 
         Process(name=str(now), target=analysis, args=(now, symbol, interval, time_stock_series_df)).start()

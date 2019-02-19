@@ -4,7 +4,6 @@ from datetime import datetime as DateTime
 from typing import Any, Dict, Tuple, Union
 
 from app.api import API
-from app.analysis.time_series import TimeSeries
 
 class StockTimeSeries(API):
 
@@ -23,10 +22,9 @@ class StockTimeSeries(API):
         }
 
     def get(self) -> Any:
-        def parse_data(key: str, value: Dict[str, str]) -> Tuple[DateTime, float, float, float, float, float]:
+        def parse_data(value: Dict[str, str]) -> Tuple[float, float, float, float, float]:
             try:
                 return \
-                    DateTime.strptime(key, '%Y-%m-%d %H:%M:%S'), \
                     float(value.get('1. open', '0')), \
                     float(value.get('2. high', '0')), \
                     float(value.get('3. low', '0')), \
@@ -42,6 +40,6 @@ class StockTimeSeries(API):
         time_series: Dict[str, Dict[str, str]] = response.get(f'Time Series ({self._interval})', {})
 
         return [
-            parse_data(key, value)
-            for key, value in time_series.items()
-        ]
+            parse_data(value)
+            for _, value in time_series.items()
+        ][::-1]
