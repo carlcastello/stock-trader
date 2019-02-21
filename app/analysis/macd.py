@@ -1,24 +1,69 @@
-from datetime import datetime as Datetime
 from pandas import DataFrame
-from threading import Thread
+from numpy import where
 
-from typing import Optional, List
+from typing import List, Dict, Any
 
-from app.analysis.macd import macd_analysis
+MACD_SHORT: int = 12
+MACD_SIGNAL: int = 9
+MACD_LONG: int = 26
 
-def analysis(now: Datetime,
-             symbol: str,
-             interval: float,
-             time_stock_series_df: DataFrame,
-             **kwargs: str) -> None:
-    
-    print(time_stock_series_df)
-    macd_analysis_thread = Thread(target=macd_analysis, args=(time_stock_series_df.copy(),))
-    macd_analysis_thread.start()
-    macd_analysis_thread.join()
+
+def macd_plot(data_frame: DataFrame, **kwargs: Any) -> None:
+    plot_1 = kwargs.get('plot', '')
+    plot_2 = plot.twinx()
+    plot_3 = plot_2.twinx()
+
+    red: str = 'red'
+    blue: str = 'blue'
+    black: str = 'black'
+
+    plot_1.set_ylabel('Closing Price', color=black)
+    plot_1.plot(data_frame['4. close'], color=black)
+    plot_1.tick_params(axis='y', labelcolor=black)
+
+    plot_2.set_ylabel('MACD', color=red)
+    plot_2.plot(data_frame['macd'], color=red)
+    plot_2.tick_params(axis='y', labelcolor=red)
+
+    plot_3.set_ylabel('Signal', color=blue)
+    plot_3.plot(data_frame['signal'], color=blue)
+    plot_3.tick_params(axis='y', labelcolor=blue)
+
+    kwargs.get('figure', '').tight_layout()
+    show()
+
+def macd_analysis(data_frame: DataFrame, **kwargs: Any) -> str:
+    columns: List[str] = ['4. close']
+
+    data_frame['macd'] = \
+        data_frame[columns].ewm(span=MACD_SHORT).mean() - \
+        data_frame[columns].ewm(span=MACD_LONG).mean()
+
+    data_frame['signal'] = data_frame['macd']\
+        .ewm(span=MACD_SIGNAL)\
+        .mean()
+
+    data_frame['position'] = data_frame['macd'] > data_frame['signal']
+
+    if kwargs.get('should_plot', False):
+        macd_plot(data_frame, **kwargs)
+
+    if data_frame['position'].tail(1).values[0] == True:
+        print('Bearish')
+        return ''
+    else: 
+        print('Bullish')
+    return ''
 
 
 if __name__ == "__main__":
+    import tkinter
+    from matplotlib import pyplot
+    from pylab import show
+    from datetime import datetime as Datetime
+
+    pyplot.close('all')
+
     tesla = [
         (306.88, 306.88, 306.77, 306.81, 4272.0),
         (306.7748, 306.7748, 306.57, 306.57, 2083.0),
@@ -119,10 +164,17 @@ if __name__ == "__main__":
         (307.85, 307.94, 307.81, 307.81, 52476.0),
         (307.79, 307.9, 307.79, 307.87, 39769.0),
         (307.83, 307.9101, 307.76, 307.78, 42773.0),
-        (307.81, 307.95, 307.7276, 307.8, 66061.0),
+        (307.81, 307.95, 307.7276, 207.8, 66061.0),
     ]
 
-    analysis(Datetime.now(),
-             'TSLA',
-             60,
-             DataFrame(tesla, columns=['Open', 'High', 'Low', 'Close', 'Volume']))
+    figure, plot = pyplot.subplots()
+
+    macd_analysis(
+        DataFrame(tesla, columns=['1. open', '2. high', '3. low', '4. close', '5. volume']),
+        **{
+            'should_plot': True,
+            'plot': plot,
+            'figure': figure,
+        }
+    )
+    
