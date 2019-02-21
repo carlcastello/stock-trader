@@ -3,10 +3,11 @@ from numpy import where
 
 from typing import List, Dict, Any
 
+from app.analysis.constants import BEARISH, BULLISH
+
 MACD_SHORT: int = 12
 MACD_SIGNAL: int = 9
 MACD_LONG: int = 26
-
 
 def macd_plot(data_frame: DataFrame, **kwargs: Any) -> None:
     plot_1 = kwargs.get('plot', '')
@@ -49,10 +50,9 @@ def macd_analysis(data_frame: DataFrame, **kwargs: Any) -> str:
         macd_plot(data_frame, **kwargs)
 
     if data_frame['position'].tail(1).values[0] == True:
-        print('Bearish')
-        return ''
+        print(BEARISH)
     else: 
-        print('Bullish')
+        print(BULLISH)
     return ''
 
 

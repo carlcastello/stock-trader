@@ -5,8 +5,6 @@ from alpha_vantage.timeseries import TimeSeries
 
 from typing import Optional
 
-
-from app.api.alpha_vantage.stock_time_series import StockTimeSeries
 from app.analysis import analysis
 from app.google.google_sheet import GoogleSheet
 from app.ticker import Ticker

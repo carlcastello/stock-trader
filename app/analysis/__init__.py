@@ -11,8 +11,7 @@ def analysis(now: Datetime,
              interval: float,
              time_stock_series_df: DataFrame,
              **kwargs: str) -> None:
-    
-    print(time_stock_series_df)
+
     macd_analysis_thread = Thread(target=macd_analysis, args=(time_stock_series_df.copy(),))
     macd_analysis_thread.start()
     macd_analysis_thread.join()

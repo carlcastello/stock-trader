@@ -2,19 +2,6 @@ from typing import List, Any, Optional, Dict
 
 from app.google.google_api import GoogleAPI
 
-# class ValueRange: 
-    
-#     def __init__(self, range: str, major_dimension: str = 'ROWS', **kwargs : str):
-#         self._range = range
-#         self._major_dimension = major_dimension
-#         self._kwargs = kwargs
-    
-#     def to_google_json(self) -> Dict[str, Any]:
-#         return {
-#             'range': self._range,
-#             'majorDimension': self._major_dimension,
-#             **self._kwargs,
-#         }
 
 class Result:
 
@@ -38,9 +25,6 @@ class Result:
             return self._row[index]
         except IndexError:
             return []
-
-    def column(self) -> List[List[str]]:
-        return self._column
 
     def column(self, index: int) -> List[Any]:
         try:
