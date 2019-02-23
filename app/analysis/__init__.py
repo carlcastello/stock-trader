@@ -1,20 +1,29 @@
 from datetime import datetime as Datetime
 from pandas import DataFrame
+from queue import Queue
 from threading import Thread
 
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
+from app.constants import MACD
 from app.analysis.macd import macd_analysis
 
 def analysis(now: Datetime,
              symbol: str,
              interval: float,
              time_stock_series_df: DataFrame,
-             **kwargs: str) -> None:
+             config_args: Dict[str, Any]) -> None:
 
-    macd_analysis_thread = Thread(target=macd_analysis, args=(time_stock_series_df.copy(),))
+    macd_result: Queue = Queue()
+    macd_analysis_thread = Thread(
+        target=macd_analysis,
+        args=(macd_result, time_stock_series_df.copy(),
+        list(map(int, config_args.get(MACD, []))))
+    )
     macd_analysis_thread.start()
     macd_analysis_thread.join()
+
+    print(macd_result.get())
 
 
 if __name__ == "__main__":
@@ -124,4 +133,5 @@ if __name__ == "__main__":
     analysis(Datetime.now(),
              'TSLA',
              60,
-             DataFrame(tesla, columns=['Open', 'High', 'Low', 'Close', 'Volume']))
+             DataFrame(tesla, columns=['Open', 'High', 'Low', 'Close', 'Volume']), 
+             {})

@@ -15,7 +15,7 @@ class Result:
         except IndexError as exception:
             if default:
                 return default
-            raise Exception('Unexpected behavior reached. Trying to index unknown value.')
+            raise Exception('Google Sheet: Unexpected behavior reached. Trying to index unknown value.')
 
     def rows(self) -> List[List[str]]:
         return self._row
@@ -25,6 +25,9 @@ class Result:
             return self._row[index]
         except IndexError:
             return []
+
+    def columns(self) -> List[List[str]]:
+        return self._column
 
     def column(self, index: int) -> List[Any]:
         try:

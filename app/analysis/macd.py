@@ -1,22 +1,32 @@
 from pandas import DataFrame
 from numpy import where
 
+from queue import Queue
+
 from typing import List, Dict, Any
 
-from app.analysis.constants import BEARISH, BULLISH
+try: 
+    from app.constants import MACD
+    from app.analysis.constants import BEARISH, BULLISH
+except (ImportError, ModuleNotFoundError):
+    MACD = 'MACD' 
+    BEARISH = 'BEARISH'
+    BULLISH = 'BULLISH'
 
-MACD_SHORT: int = 12
-MACD_SIGNAL: int = 9
-MACD_LONG: int = 26
 
 def macd_plot(data_frame: DataFrame, **kwargs: Any) -> None:
     plot_1 = kwargs.get('plot', '')
     plot_2 = plot.twinx()
     plot_3 = plot_2.twinx()
+    plot_4 = plot_2.twinx()
+    plot_5 = plot_2.twinx()
 
     red: str = 'red'
     blue: str = 'blue'
     black: str = 'black'
+    orange: str = 'orange'
+    pink: str = 'pink'
+
 
     plot_1.set_ylabel('Closing Price', color=black)
     plot_1.plot(data_frame['4. close'], color=black)
@@ -30,18 +40,30 @@ def macd_plot(data_frame: DataFrame, **kwargs: Any) -> None:
     plot_3.plot(data_frame['signal'], color=blue)
     plot_3.tick_params(axis='y', labelcolor=blue)
 
-    kwargs.get('figure', '').tight_layout()
-    show()
+    # plot_4.set_ylabel('Swing', color=orange)
+    # plot_4.plot(data_frame['swing'], color=orange)
+    # plot_4.tick_params(axis='y', labelcolor=orange)
 
-def macd_analysis(data_frame: DataFrame, **kwargs: Any) -> str:
+    # plot_5.set_ylabel('Swing', color=pink)
+    # plot_5.plot(data_frame['swing_signal'], color=pink)
+    # plot_5.tick_params(axis='y', labelcolor=pink)
+
+def check_settings(settings: List[int]) -> List[int]:
+    if len(settings) == 3:
+        return settings
+    else:
+        raise Exception('MACD: Lacks appropriate settings to run MACD analysis')
+
+def macd_analysis(result: Queue, data_frame: DataFrame, settings: List[int], **kwargs: str) -> None:
     columns: List[str] = ['4. close']
+    macd_min, macd_max, macd_signal = check_settings(settings)
 
     data_frame['macd'] = \
-        data_frame[columns].ewm(span=MACD_SHORT).mean() - \
-        data_frame[columns].ewm(span=MACD_LONG).mean()
+        data_frame[columns].ewm(span=macd_min).mean() - \
+        data_frame[columns].ewm(span=macd_max).mean()
 
     data_frame['signal'] = data_frame['macd']\
-        .ewm(span=MACD_SIGNAL)\
+        .ewm(span=macd_signal)\
         .mean()
 
     data_frame['position'] = data_frame['macd'] > data_frame['signal']
@@ -49,11 +71,9 @@ def macd_analysis(data_frame: DataFrame, **kwargs: Any) -> str:
     if kwargs.get('should_plot', False):
         macd_plot(data_frame, **kwargs)
 
-    if data_frame['position'].tail(1).values[0] == True:
-        print(BEARISH)
-    else: 
-        print(BULLISH)
-    return ''
+
+
+    result.put(BEARISH if data_frame['position'].tail(1).bool() else BULLISH)
 
 
 if __name__ == "__main__":
@@ -164,13 +184,17 @@ if __name__ == "__main__":
         (307.85, 307.94, 307.81, 307.81, 52476.0),
         (307.79, 307.9, 307.79, 307.87, 39769.0),
         (307.83, 307.9101, 307.76, 307.78, 42773.0),
-        (307.81, 307.95, 307.7276, 207.8, 66061.0),
+        (307.81, 307.95, 307.7276, 307.8, 66061.0),
     ]
 
     figure, plot = pyplot.subplots()
 
+    result:Queue = Queue()
+
     macd_analysis(
+        result,
         DataFrame(tesla, columns=['1. open', '2. high', '3. low', '4. close', '5. volume']),
+        [3, 9, 10],
         **{
             'should_plot': True,
             'plot': plot,
@@ -178,3 +202,5 @@ if __name__ == "__main__":
         }
     )
     
+    figure.tight_layout()
+    show()
