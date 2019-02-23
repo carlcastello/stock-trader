@@ -14,7 +14,7 @@ from app.google.google_sheet import GoogleSheet, Result
 class Ticker:
     
     _should_callback = False
-    _config_args: Dict[str, Any] = {}
+    _settings: Dict[str, Any] = {}
 
     def __init__(self,
                  config_spread_sheet_id: str,
@@ -54,7 +54,7 @@ class Ticker:
             if not self._should_callback and should_callback:
                 # Update config variables... occures once a day
                 macd_config: Result = self._config_spread_sheet.read('B14:B16')
-                self._config_args = {
+                self._settings = {
                     MACD: macd_config.column(0)
                 }
 
@@ -63,7 +63,7 @@ class Ticker:
 
     def _ticker(self) -> None:
         if self._should_callback:
-            self._ticker_callback(self._current_date_time, self._interval, self._config_args)
+            self._ticker_callback(self._current_date_time, self._interval, self._settings)
 
         self._scheduler.enter(self._interval, 1, self._ticker, ())
 

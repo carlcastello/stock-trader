@@ -12,13 +12,13 @@ def analysis(now: Datetime,
              symbol: str,
              interval: float,
              time_stock_series_df: DataFrame,
-             config_args: Dict[str, Any]) -> None:
+             settings: Dict[str, Any]) -> None:
 
     macd_result: Queue = Queue()
     macd_analysis_thread = Thread(
         target=macd_analysis,
         args=(macd_result, time_stock_series_df.copy(),
-        list(map(int, config_args.get(MACD, []))))
+        list(map(int, settings.get(MACD, []))))
     )
     macd_analysis_thread.start()
     macd_analysis_thread.join()

@@ -27,7 +27,6 @@ def macd_plot(data_frame: DataFrame, **kwargs: Any) -> None:
     orange: str = 'orange'
     pink: str = 'pink'
 
-
     plot_1.set_ylabel('Closing Price', color=black)
     plot_1.plot(data_frame['4. close'], color=black)
     plot_1.tick_params(axis='y', labelcolor=black)
