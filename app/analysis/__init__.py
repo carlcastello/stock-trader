@@ -17,8 +17,12 @@ def analysis(now: Datetime,
     macd_result: Queue = Queue()
     macd_analysis_thread = Thread(
         target=macd_analysis,
-        args=(macd_result, time_stock_series_df.copy(),
-        list(map(int, settings.get(MACD, []))))
+        args=(
+            macd_result,
+            time_stock_series_df.copy(),
+            list(map(int, settings.get(MACD, []))),
+            interval
+        )
     )
     macd_analysis_thread.start()
     macd_analysis_thread.join()

@@ -7,19 +7,23 @@ from typing import List, Dict, Any
 
 try: 
     from app.constants import MACD
-    from app.analysis.constants import BEARISH, BULLISH
+    from app.analysis.constants import BEARISH, BULLISH, BUY, SELL, HOLD
 except (ImportError, ModuleNotFoundError):
     MACD = 'MACD' 
     BEARISH = 'BEARISH'
     BULLISH = 'BULLISH'
+    BUY = 'BUY'
+    SELL = 'SELL'
+    HOLD = 'HOLD'
 
+CLOSE = '4. close'
+SIGNAL = 'SIGNAL'
+POSITION = 'POSITION'
 
 def macd_plot(data_frame: DataFrame, **kwargs: Any) -> None:
     plot_1 = kwargs.get('plot', '')
     plot_2 = plot.twinx()
     plot_3 = plot_2.twinx()
-    plot_4 = plot_2.twinx()
-    plot_5 = plot_2.twinx()
 
     red: str = 'red'
     blue: str = 'blue'
@@ -28,24 +32,16 @@ def macd_plot(data_frame: DataFrame, **kwargs: Any) -> None:
     pink: str = 'pink'
 
     plot_1.set_ylabel('Closing Price', color=black)
-    plot_1.plot(data_frame['4. close'], color=black)
+    plot_1.plot(data_frame[CLOSE], color=black)
     plot_1.tick_params(axis='y', labelcolor=black)
 
-    plot_2.set_ylabel('MACD', color=red)
-    plot_2.plot(data_frame['macd'], color=red)
+    plot_2.set_ylabel(MACD, color=red)
+    plot_2.plot(data_frame[MACD], color=red)
     plot_2.tick_params(axis='y', labelcolor=red)
 
-    plot_3.set_ylabel('Signal', color=blue)
-    plot_3.plot(data_frame['signal'], color=blue)
+    plot_3.set_ylabel(SIGNAL, color=blue)
+    plot_3.plot(data_frame[SIGNAL], color=blue)
     plot_3.tick_params(axis='y', labelcolor=blue)
-
-    # plot_4.set_ylabel('Swing', color=orange)
-    # plot_4.plot(data_frame['swing'], color=orange)
-    # plot_4.tick_params(axis='y', labelcolor=orange)
-
-    # plot_5.set_ylabel('Swing', color=pink)
-    # plot_5.plot(data_frame['swing_signal'], color=pink)
-    # plot_5.tick_params(axis='y', labelcolor=pink)
 
 def check_settings(settings: List[int]) -> List[int]:
     if len(settings) == 3:
@@ -53,26 +49,48 @@ def check_settings(settings: List[int]) -> List[int]:
     else:
         raise Exception('MACD: Lacks appropriate settings to run MACD analysis')
 
-def macd_analysis(result: Queue, data_frame: DataFrame, settings: List[int], **kwargs: str) -> None:
-    columns: List[str] = ['4. close']
+def calculate_intecept(current_index: int, previous_index: int, data_frame: DataFrame) -> float:
+    mc: float = data_frame.at[current_index, MACD]
+    mp: float = data_frame.at[previous_index, MACD]
+    sc: float = data_frame.at[current_index, SIGNAL]
+    sp: float = data_frame.at[previous_index, SIGNAL]
+    return (mp - sc) / (sc - sp - mc + mp)
+
+
+def macd_analysis(result: Queue,
+                  data_frame: DataFrame,
+                  settings: List[int],
+                  interval: float,
+                  **kwargs: str) -> None:
     macd_min, macd_max, macd_signal = check_settings(settings)
 
-    data_frame['macd'] = \
-        data_frame[columns].ewm(span=macd_min).mean() - \
-        data_frame[columns].ewm(span=macd_max).mean()
+    data_frame[MACD] = \
+        data_frame[CLOSE].ewm(span=macd_min).mean() - \
+        data_frame[CLOSE].ewm(span=macd_max).mean()
 
-    data_frame['signal'] = data_frame['macd']\
+    data_frame[SIGNAL] = data_frame[MACD]\
         .ewm(span=macd_signal)\
         .mean()
 
-    data_frame['position'] = data_frame['macd'] > data_frame['signal']
+    data_frame[POSITION] = data_frame[MACD] > data_frame[SIGNAL]
 
     if kwargs.get('should_plot', False):
         macd_plot(data_frame, **kwargs)
 
+    length: int = len(data_frame.index)
+    previous_index: int = length - 2
+    current_index: int = length - 1    
 
+    if data_frame.loc[previous_index, POSITION] != data_frame.loc[current_index, POSITION]:
+        x_intercept: float = calculate_intecept(current_index, previous_index, data_frame)
 
-    result.put(BEARISH if data_frame['position'].tail(1).bool() else BULLISH)
+        pc: bool = data_frame.at[current_index, POSITION]
+        if data_frame.at[current_index, POSITION]:
+            result.put(BUY if x_intercept <= interval/2 else HOLD)
+        else:
+            result.put(SELL if x_intercept <= interval/2 else HOLD)
+    else:
+        result.put(BULLISH if data_frame[POSITION].tail(1).bool() else BEARISH)
 
 
 if __name__ == "__main__":
@@ -80,6 +98,7 @@ if __name__ == "__main__":
     from matplotlib import pyplot
     from pylab import show
     from datetime import datetime as Datetime
+    should_plot: bool = True
 
     pyplot.close('all')
 
@@ -194,12 +213,16 @@ if __name__ == "__main__":
         result,
         DataFrame(tesla, columns=['1. open', '2. high', '3. low', '4. close', '5. volume']),
         [3, 9, 10],
+        60,
         **{
-            'should_plot': True,
+            'should_plot': should_plot,
             'plot': plot,
             'figure': figure,
         }
     )
+
+    print(result.get())
     
-    figure.tight_layout()
-    show()
+    if should_plot:
+        figure.tight_layout()
+        show()
