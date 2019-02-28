@@ -19,7 +19,11 @@ def start_app(symbol: str, config_spread_sheet_id: str, alpha_vantage_id: str) -
             outputsize='compact',
         )
  
-        Process(name=str(now), target=analysis, args=(now, symbol, interval, time_stock_series_df, settings)).start()
+        Process(
+            name=str(now),
+            target=analysis,
+            args=(now, symbol, interval, time_stock_series_df, settings)
+        ).start()
 
     ticker: Ticker = Ticker(config_spread_sheet_id, _ticker_callback)
     ticker.run() 

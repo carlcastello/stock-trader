@@ -1,2 +1,0 @@
-INTERVAL: str = 'INTERVAL'
-MACD: str = 'MACD'

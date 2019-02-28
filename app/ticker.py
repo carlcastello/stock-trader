@@ -5,14 +5,13 @@ from sched import scheduler as Scheduler
 from datetime import datetime as DateTime, date as Date
 from pytz import timezone
 
-# from mypy.types. import KwArgs
 from typing import Optional, List, Any, Callable, Union, Dict
 
-from app.constants import INTERVAL, MACD
+from app.analysis.constants import MACD, MACD_MIN, MACD_MAX, MACD_SIGNAL
 from app.google.google_sheet import GoogleSheet, Result
 
 class Ticker:
-    
+     
     _should_callback = False
     _settings: Dict[str, Any] = {}
 
@@ -42,6 +41,17 @@ class Ticker:
             '%Y-%m-%d %I:%M %p'
         ).replace(tzinfo=self._timezone)
 
+    def __update_settings(self) -> None:
+        settings: Result = self._config_spread_sheet.read('B14:B16')
+        macd_settings: List[str] = settings.column(0)
+        self._settings = {
+            MACD: {
+                MACD_MIN: macd_settings[0],
+                MACD_MAX: macd_settings[1],
+                MACD_SIGNAL: macd_settings[2]
+            }
+        }
+
     def __ticker_thread(self) -> None:
         while True:
             self._current_date_time: DateTime = DateTime.now(self._timezone)
@@ -52,11 +62,8 @@ class Ticker:
                 self._current_date_time < self._closing_hours or True
             
             if not self._should_callback and should_callback:
-                # Update config variables... occures once a day
-                macd_config: Result = self._config_spread_sheet.read('B14:B16')
-                self._settings = {
-                    MACD: macd_config.column(0)
-                }
+                # Update config variables... occures once a day or after reset
+                self.__update_settings()
 
             self._should_callback = should_callback
             sleep(self._interval / 2)

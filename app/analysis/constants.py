@@ -3,3 +3,8 @@ BULLISH: str = 'BULLISH'
 SELL: str = 'SELL'
 BUY: str = 'BUY'
 HOLD: str = 'HOLD'
+
+MACD: str = 'MACD'
+MACD_MIN: str = 'MIN'
+MACD_MAX: str = 'MAX'
+MACD_SIGNAL: str = 'SIG'

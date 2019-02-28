@@ -6,24 +6,20 @@ from queue import Queue
 from typing import List, Dict, Any
 
 try: 
-    from app.constants import MACD
-    from app.analysis.constants import BEARISH, BULLISH, BUY, SELL, HOLD
+    from app.analysis.constants import BEARISH, BULLISH, BUY, SELL, HOLD, MACD, \
+        MACD_MIN, MACD_MAX, MACD_SIGNAL
 except (ImportError, ModuleNotFoundError):
-    MACD = 'MACD' 
-    BEARISH = 'BEARISH'
-    BULLISH = 'BULLISH'
-    BUY = 'BUY'
-    SELL = 'SELL'
-    HOLD = 'HOLD'
+    from constants import BEARISH, BULLISH, BUY, SELL, HOLD, MACD, \
+        MACD_MIN, MACD_MAX, MACD_SIGNAL
 
 CLOSE = '4. close'
 SIGNAL = 'SIGNAL'
 POSITION = 'POSITION'
 
-def macd_plot(data_frame: DataFrame, **kwargs: Any) -> None:
+def _show_plot(data_frame: DataFrame, **kwargs: Any) -> None:
     plot_1 = kwargs.get('plot', '')
     plot_2 = plot.twinx()
-    plot_3 = plot_2.twinx()
+    plot_3 = plot_2.twiny()
 
     red: str = 'red'
     blue: str = 'blue'
@@ -43,27 +39,10 @@ def macd_plot(data_frame: DataFrame, **kwargs: Any) -> None:
     plot_3.plot(data_frame[SIGNAL], color=blue)
     plot_3.tick_params(axis='y', labelcolor=blue)
 
-def check_settings(settings: List[int]) -> List[int]:
-    if len(settings) == 3:
-        return settings
-    else:
-        raise Exception('MACD: Lacks appropriate settings to run MACD analysis')
-
-def calculate_intecept(current_index: int, previous_index: int, data_frame: DataFrame) -> float:
-    mc: float = data_frame.at[current_index, MACD]
-    mp: float = data_frame.at[previous_index, MACD]
-    sc: float = data_frame.at[current_index, SIGNAL]
-    sp: float = data_frame.at[previous_index, SIGNAL]
-    return (mp - sc) / (sc - sp - mc + mp)
-
-
-def macd_analysis(result: Queue,
-                  data_frame: DataFrame,
-                  settings: List[int],
-                  interval: float,
-                  **kwargs: str) -> None:
-    macd_min, macd_max, macd_signal = check_settings(settings)
-
+def _identify_position(data_frame: DataFrame,
+                       macd_min: int,
+                       macd_max: int,
+                       macd_signal: int) -> None: 
     data_frame[MACD] = \
         data_frame[CLOSE].ewm(span=macd_min).mean() - \
         data_frame[CLOSE].ewm(span=macd_max).mean()
@@ -74,24 +53,54 @@ def macd_analysis(result: Queue,
 
     data_frame[POSITION] = data_frame[MACD] > data_frame[SIGNAL]
 
-    if kwargs.get('should_plot', False):
-        macd_plot(data_frame, **kwargs)
-
+def _interpret_position(data_frame: DataFrame, interval: float) -> str:
     length: int = len(data_frame.index)
     previous_index: int = length - 2
-    current_index: int = length - 1    
+    current_index: int = length - 1
 
-    if data_frame.loc[previous_index, POSITION] != data_frame.loc[current_index, POSITION]:
-        x_intercept: float = calculate_intecept(current_index, previous_index, data_frame)
+    position_current: DataFrame = data_frame.loc[current_index, POSITION]
+    position_previous: DataFrame = data_frame.loc[previous_index, POSITION]
 
-        pc: bool = data_frame.at[current_index, POSITION]
+    decision: str = ''
+
+    if position_previous != position_current:
+        x_intercept: float = _calculate_intecept(current_index, previous_index, data_frame)
         if data_frame.at[current_index, POSITION]:
-            result.put(BUY if x_intercept <= interval/2 else HOLD)
+            decision = BUY if x_intercept <= interval/2 else HOLD
         else:
-            result.put(SELL if x_intercept <= interval/2 else HOLD)
+            decision = SELL if x_intercept <= interval/2 else HOLD
+    elif data_frame.loc[previous_index - 1, POSITION] != position_previous:
+        decision = BUY if position_current else SELL
     else:
-        result.put(BULLISH if data_frame[POSITION].tail(1).bool() else BEARISH)
+        decision = BULLISH if position_previous else BEARISH
 
+    return decision
+
+def _calculate_intecept(current_index: int, previous_index: int, data_frame: DataFrame) -> float:
+    mc: float = data_frame.at[current_index, MACD]
+    mp: float = data_frame.at[previous_index, MACD]
+    sc: float = data_frame.at[current_index, SIGNAL]
+    sp: float = data_frame.at[previous_index, SIGNAL]
+    return (mp - sc) / (sc - sp - mc + mp)
+
+def macd_analysis(result: Queue,
+                  interval: float,
+                  data_frame: DataFrame,
+                  settings: Dict[str, int],
+                  **kwargs: str) -> None:
+
+    macd_min = settings.get(MACD_MIN)
+    macd_max = settings.get(MACD_MAX)
+    macd_signal = settings.get(MACD_SIGNAL)
+
+    if macd_min and macd_max and macd_signal:
+        _identify_position(data_frame, macd_min, macd_max, macd_signal)
+        result.put(_interpret_position(data_frame, interval))
+    else:
+        raise Exception('MACD: Lacks appropriate settings to run MACD analysis')
+
+    if kwargs.get('should_plot', False):
+        _show_plot(data_frame, **kwargs)
 
 if __name__ == "__main__":
     import tkinter
@@ -211,9 +220,13 @@ if __name__ == "__main__":
 
     macd_analysis(
         result,
-        DataFrame(tesla, columns=['1. open', '2. high', '3. low', '4. close', '5. volume']),
-        [3, 9, 10],
         60,
+        DataFrame(tesla, columns=['1. open', '2. high', '3. low', '4. close', '5. volume']),
+        {
+            MACD_MIN: 3,
+            MACD_MAX: 9,
+            MACD_SIGNAL: 6
+        },
         **{
             'should_plot': should_plot,
             'plot': plot,
