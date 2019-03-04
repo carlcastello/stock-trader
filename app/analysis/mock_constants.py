@@ -4,9 +4,9 @@ except (ImportError, ModuleNotFoundError):
     from constants import MACD_MIN, MACD_MAX, MACD_SIGNAL
 
 MACD_SETTINGS = {
-    MACD_MIN: 3,
-    MACD_MAX: 9,
-    MACD_SIGNAL: 6
+    MACD_MIN: 8,
+    MACD_MAX: 12,
+    MACD_SIGNAL: 2
 }
 
 TABLE_COLUMNS = ['1. open', '2. high', '3. low', '4. close', '5. volume']

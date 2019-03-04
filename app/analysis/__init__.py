@@ -32,13 +32,13 @@ def analysis(now: Datetime,
     macd_thread, macd_queue = _create_thread(
         macd_analysis,
         interval,
-        time_stock_series_df,
+        time_stock_series_df.copy(),
         settings.get(MACD, {})
     )
 
     rsi_thread, rsi_queue = _create_thread(
         rsi_analysis,
-        time_stock_series_df
+        time_stock_series_df.copy()
     )
 
     macd_thread.start()
@@ -48,7 +48,7 @@ def analysis(now: Datetime,
     rsi_thread.join()
 
     print(macd_queue.get(), rsi_queue.get())
-
+    print(time_stock_series_df)
 
 if __name__ == "__main__":
     from mock_constants import TESLA, TABLE_COLUMNS, MACD_SETTINGS
