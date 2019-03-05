@@ -48,7 +48,6 @@ def analysis(now: Datetime,
     rsi_thread.join()
 
     print(macd_queue.get(), rsi_queue.get())
-    print(time_stock_series_df)
 
 if __name__ == "__main__":
     from mock_constants import TESLA, TABLE_COLUMNS, MACD_SETTINGS

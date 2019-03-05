@@ -4,14 +4,14 @@ from math import acos, degrees
 
 from queue import Queue
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 try: 
     from app.analysis.constants import BEARISH, BULLISH, CROSSOVER, SOARING, DIVERGING, RANGING, \
-        CONVERGING, PLUMMETING, MACD, MACD_MIN, MACD_MAX, MACD_SIGNAL
+        CONVERGING, PLUMMETING, MACD, MACD_MIN, MACD_MAX, MACD_SIGNAL, REGRESSION_RANGE
 except (ImportError, ModuleNotFoundError):
     from constants import BEARISH, BULLISH, CROSSOVER, SOARING, DIVERGING, RANGING, \
-        CONVERGING, PLUMMETING, MACD, MACD_MIN, MACD_MAX, MACD_SIGNAL
+        CONVERGING, PLUMMETING, MACD, MACD_MIN, MACD_MAX, MACD_SIGNAL, REGRESSION_RANGE
 
 CLOSE = '4. close'
 SIGNAL = 'SIGNAL'
@@ -43,7 +43,8 @@ def _show_plot(data_frame: DataFrame, **kwargs: Any) -> None:
 def _identify_trend(macd_min: int,
                     macd_max: int,
                     macd_signal: int,
-                    data_frame: DataFrame,) -> None: 
+                    data_frame: DataFrame,) -> None:
+
     data_frame[MACD] = \
         data_frame[CLOSE].ewm(span=macd_min).mean() - \
         data_frame[CLOSE].ewm(span=macd_max).mean()
@@ -75,7 +76,16 @@ def _interpret_trend(data_frame: DataFrame) -> str:
 def _identify_trend_angle(regression_range: int, data_frame: DataFrame) -> float:
     tail: DataFrame = data_frame.tail(regression_range)
     slope, _ = polyfit(range(regression_range), tail[CLOSE], 1)
-    return degrees(acos(regression_range/slope % 1)) if slope != 0 else 0
+
+    cosine_value: float = 0
+    if slope > 0:
+        cosine_value = regression_range/slope % 1
+    elif slope < 0:
+        cosine_value = -(regression_range/slope % 1)
+    else:
+        cosine_value = 0
+
+    return degrees(acos(cosine_value))
 
 def _interpret_state(trend: str, angle: float) -> str:
     def is_ranging() -> bool:
@@ -112,15 +122,17 @@ def macd_analysis(result: Queue,
                   settings: Dict[str, int],
                   **kwargs: str) -> None:
 
-    macd_min = settings.get(MACD_MIN)
-    macd_max = settings.get(MACD_MAX)
-    macd_signal = settings.get(MACD_SIGNAL)
+    macd_min: Optional[int] = settings.get(MACD_MIN)
+    macd_max: Optional[int] = settings.get(MACD_MAX)
+    macd_signal: Optional[int] = settings.get(MACD_SIGNAL)
 
-    if macd_min and macd_max and macd_signal:
+    regression_range:  Optional[int] = settings.get(REGRESSION_RANGE)
+
+    if macd_min and macd_max and macd_signal and regression_range:
         _identify_trend(macd_min, macd_max, macd_signal, data_frame)
         trend: str = _interpret_trend(data_frame)
-        state: str = _interpret_state(trend, _identify_trend_angle(10, data_frame))       
-        result.put('')
+        state: str = _interpret_state(trend, _identify_trend_angle(regression_range, data_frame))       
+        result.put([trend, state])
     else:
         raise Exception('MACD: Lacks appropriate settings to run MACD analysis')
 
@@ -140,7 +152,7 @@ if __name__ == "__main__":
 
     figure, plot = pyplot.subplots()
 
-    result:Queue = Queue()
+    result: Queue = Queue()
 
     macd_analysis(
         result,

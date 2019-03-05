@@ -7,7 +7,7 @@ from pytz import timezone
 
 from typing import Optional, List, Any, Callable, Union, Dict
 
-from app.analysis.constants import MACD, MACD_MIN, MACD_MAX, MACD_SIGNAL
+from app.analysis.constants import MACD, MACD_MIN, MACD_MAX, MACD_SIGNAL, REGRESSION_RANGE
 from app.google.google_sheet import GoogleSheet, Result
 
 class Ticker:
@@ -42,13 +42,14 @@ class Ticker:
         ).replace(tzinfo=self._timezone)
 
     def __update_settings(self) -> None:
-        settings: Result = self._config_spread_sheet.read('B14:B16')
-        macd_settings: List[str] = settings.column(0)
+        settings: Result = self._config_spread_sheet.read('B14:B17')
+        macd_settings: List[int] = list(map(int, settings.column(0)))
         self._settings = {
             MACD: {
                 MACD_MIN: macd_settings[0],
                 MACD_MAX: macd_settings[1],
-                MACD_SIGNAL: macd_settings[2]
+                MACD_SIGNAL: macd_settings[2],
+                REGRESSION_RANGE: macd_settings[3],
             }
         }
 
