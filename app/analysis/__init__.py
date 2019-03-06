@@ -5,14 +5,14 @@ from threading import Thread
 
 from typing import Optional, List, Dict, Any, Tuple, Callable
 
-try:
-    from app.analysis.constants import MACD
-    from app.analysis.macd import macd_analysis
-    from app.analysis.rsi import rsi_analysis
-except (ImportError, ModuleNotFoundError):
+if __name__ == "__main__":
     from constants import MACD
     from macd import macd_analysis
     from rsi import rsi_analysis
+else:
+    from app.analysis.constants import MACD
+    from app.analysis.macd import macd_analysis
+    from app.analysis.rsi import rsi_analysis
 
 
 def _create_thread(callable: Callable, *args: float) -> Tuple[Thread, Queue]:

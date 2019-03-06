@@ -22,7 +22,7 @@ def start_app(symbol: str, config_spread_sheet_id: str, alpha_vantage_id: str) -
         Process(
             name=str(now),
             target=analysis,
-            args=(now, symbol, interval, time_stock_series_df.reset_index(drop=True).iloc[::-1], settings)
+            args=(now, symbol, interval, time_stock_series_df.reset_index(drop=True), settings)
         ).start()
 
     ticker: Ticker = Ticker(config_spread_sheet_id, _ticker_callback)

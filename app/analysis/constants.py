@@ -13,3 +13,5 @@ MACD_MIN: str = 'MIN'
 MACD_MAX: str = 'MAX'
 MACD_SIGNAL: str = 'SIG'
 REGRESSION_RANGE: str = 'REGRESSION_RANGE'
+
+CLOSE: str = '4. close'

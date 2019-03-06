@@ -6,16 +6,15 @@ from queue import Queue
 
 from typing import List, Dict, Any, Optional
 
-try: 
-    from app.analysis.constants import BEARISH, BULLISH, CROSSOVER, SOARING, DIVERGING, RANGING, \
-        CONVERGING, PLUMMETING, MACD, MACD_MIN, MACD_MAX, MACD_SIGNAL, REGRESSION_RANGE
-except (ImportError, ModuleNotFoundError):
+if __name__ == "__main__":
     from constants import BEARISH, BULLISH, CROSSOVER, SOARING, DIVERGING, RANGING, \
-        CONVERGING, PLUMMETING, MACD, MACD_MIN, MACD_MAX, MACD_SIGNAL, REGRESSION_RANGE
+        CONVERGING, PLUMMETING, MACD, MACD_MIN, MACD_MAX, MACD_SIGNAL, REGRESSION_RANGE, CLOSE
+else:
+    from app.analysis.constants import BEARISH, BULLISH, CROSSOVER, SOARING, DIVERGING, RANGING, \
+        CONVERGING, PLUMMETING, MACD, MACD_MIN, MACD_MAX, MACD_SIGNAL, REGRESSION_RANGE, CLOSE
 
-CLOSE = '4. close'
-SIGNAL = 'SIGNAL'
-TREND = 'TREND'
+SIGNAL: str = 'SIGNAL'
+TREND: str = 'TREND'
 
 def _show_plot(data_frame: DataFrame, **kwargs: Any) -> None:
     plot_1 = kwargs.get('plot', '')
