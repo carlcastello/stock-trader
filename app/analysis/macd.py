@@ -84,19 +84,19 @@ def _identify_trend_angle(regression_range: int, data_frame: DataFrame) -> float
 
 def _interpret_state(trend: str, angle: float) -> str:
     def is_ranging() -> bool:
-        return  angle >= -5 and angle < 5 
+        return -5 <= angle < 5
 
     def is_plummeting() -> bool:
-        return angle >= -90 and angle < -80
+        return -90 <= angle < -80
     
     def is_soaring() -> bool:
-        return angle >= 80 and angle < 90
+        return 80 <= angle < 90
 
     def is_diverging() -> bool:
-        return angle >= 5 and angle < 80
+        return 5 <= angle < 80
 
     def is_converging() -> bool:
-        return angle >= -80 and angle < -5
+        return -80 <= angle < -5
 
     state: str = ''
     if is_ranging():
@@ -150,7 +150,6 @@ if __name__ == "__main__":
 
     macd_analysis(
         result,
-        60,
         DataFrame(TESLA, columns=TABLE_COLUMNS),
         MACD_SETTINGS,
         **{
