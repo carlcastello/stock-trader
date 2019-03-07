@@ -1,7 +1,5 @@
-try:
-    from app.analysis.constants import MACD_MIN, MACD_MAX, MACD_SIGNAL, REGRESSION_RANGE
-except (ImportError, ModuleNotFoundError):    
-    from constants import MACD_MIN, MACD_MAX, MACD_SIGNAL, REGRESSION_RANGE
+from app.analysis.constants import MACD_MIN, MACD_MAX, MACD_SIGNAL, REGRESSION_RANGE
+
 
 MACD_SETTINGS = {
     MACD_MIN: 8,

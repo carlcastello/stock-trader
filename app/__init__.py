@@ -12,7 +12,7 @@ from app.ticker import Ticker
 def start_app(symbol: str, config_spread_sheet_id: str, alpha_vantage_id: str) -> None:
     time_series: TimeSeries = TimeSeries(alpha_vantage_id, output_format='pandas')
 
-    def _ticker_callback(now: DateTime, interval: float, settings: Dict[str, Any]) -> None:
+    def _ticker_callback(now: DateTime, interval: float) -> None:
         time_stock_series_df, _ = time_series.get_intraday(
             symbol=symbol,
             interval='1min',
@@ -22,7 +22,7 @@ def start_app(symbol: str, config_spread_sheet_id: str, alpha_vantage_id: str) -
         Process(
             name=str(now),
             target=analysis,
-            args=(now, symbol, interval, time_stock_series_df.reset_index(drop=True), settings)
+            args=(now, symbol, config_spread_sheet_id, time_stock_series_df.reset_index(drop=True))
         ).start()
 
     ticker: Ticker = Ticker(config_spread_sheet_id, _ticker_callback)

@@ -3,15 +3,15 @@ from queue import Queue
 
 from typing import Tuple, Optional, Dict, Any
 
-if __name__ == "__main__":
-    from constants import CLOSE
-else:
-    from app.analysis.constants import CLOSE
+from app.analysis.constants import CLOSE, PERIODS,PREVIOUS_AVERAGE_GAIN, PREVIOUS_AVERAGE_LOSS
 
 CHANGE: str = 'CHANGE'
-PREVIOUS_AVERAGE_GAIN: str = 'PREVIOUS_AVERAGES'
-PREVIOUS_AVERAGE_LOSS: str = 'PREVIOUS_LOSS'
 
+def _initialize_current_averages(periods: int, changes_df: DataFrame) -> Tuple[float, float]:
+    average_gain = changes_df[changes_df > 0].sum() / periods
+    average_loss = changes_df[changes_df < 0].sum() / periods
+
+    return average_gain, average_loss
 
 def _calculate_current_averages(periods: int,
                                 current_difference: float,
@@ -34,50 +34,55 @@ def _calculate_current_averages(periods: int,
     average_gain = ((previous_average_gain * previous_period) + gain) / periods
     average_loss = ((previous_average_loss * previous_period) + loss) / periods
 
-    return average_gain, average_loss    
-
-def _initialize_current_averages(periods: int, changes_df: DataFrame) -> Tuple[float, float]:
-    average_gain = changes_df[changes_df > 0].sum() / periods
-    average_loss = changes_df[changes_df < 0].sum() / periods
-
     return average_gain, average_loss
 
-def rsi_analysis(queue: Queue, periods: int, settings: Dict[str, Any], data_frame: DataFrame) -> None:
+def _calculate_current_gain_and_current_loss(periods: int,
+                                             previous_average_gain: Optional[float],
+                                             previous_average_loss: Optional[float],
+                                             data_frame: DataFrame ) -> Tuple[float, float]:
     changes_df: DataFrame = data_frame[CLOSE].tail(periods).diff()
-
-    previous_average_gain: Optional[float] = settings.get(PREVIOUS_AVERAGE_GAIN)
-    previous_average_loss: Optional[float] = settings.get(PREVIOUS_AVERAGE_LOSS)
     
-    current_average_gain: float = 0
-    current_average_loss: float = 0
     if previous_average_gain and previous_average_loss:
-        current_average_gain, current_average_loss = _calculate_current_averages(
+        return _calculate_current_averages(
             periods,
             changes_df.iloc[-1],
             previous_average_gain,
             previous_average_loss
         )
     else:
-        current_average_gain, current_average_loss = _initialize_current_averages(
+        return _initialize_current_averages(
             periods,
             changes_df
         )
 
+def rsi_analysis(queue: Queue, settings: Dict[str, Any], data_frame: DataFrame) -> None:
+    periods: Optional[int] = settings.get(PERIODS)
 
-    relative_strength: float = abs(current_average_gain / current_average_loss)
-    relative_strength_index:float = 100 - (100 / (1 + relative_strength))
-    print(relative_strength, relative_strength_index)
-    queue.put('RSI')
+    if periods:
+        changes_df: DataFrame = data_frame[CLOSE].tail(periods).diff()
+      
+        current_average_gain, current_average_loss = _calculate_current_gain_and_current_loss(
+            periods,
+            settings.get(PREVIOUS_AVERAGE_GAIN),
+            settings.get(PREVIOUS_AVERAGE_LOSS),
+            data_frame
+        )
 
+        relative_strength: float = abs(current_average_gain / current_average_loss)
+        relative_strength_index:float = 100 - (100 / (1 + relative_strength))
+
+        queue.put([relative_strength, relative_strength_index])
+    else:
+        raise Exception('RSI: Lacks appropriate settings to run RSI analysis')
 
 if __name__ == "__main__":
-    from mock_constants import TESLA, TABLE_COLUMNS
+    from app.analysis.mock_constants import TESLA, TABLE_COLUMNS
 
     queue: Queue = Queue(1)
     rsi_analysis(
         queue,
-        14,
         {
+            PERIODS: 14,
             PREVIOUS_AVERAGE_GAIN: 0.2385714285714283,
             PREVIOUS_AVERAGE_LOSS: -0.0999999999999999
         },

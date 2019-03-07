@@ -6,12 +6,8 @@ from queue import Queue
 
 from typing import List, Dict, Any, Optional
 
-if __name__ == "__main__":
-    from constants import BEARISH, BULLISH, CROSSOVER, SOARING, DIVERGING, RANGING, \
-        CONVERGING, PLUMMETING, MACD, MACD_MIN, MACD_MAX, MACD_SIGNAL, REGRESSION_RANGE, CLOSE
-else:
-    from app.analysis.constants import BEARISH, BULLISH, CROSSOVER, SOARING, DIVERGING, RANGING, \
-        CONVERGING, PLUMMETING, MACD, MACD_MIN, MACD_MAX, MACD_SIGNAL, REGRESSION_RANGE, CLOSE
+from app.analysis.constants import BEARISH, BULLISH, CROSSOVER, SOARING, DIVERGING, RANGING, \
+    CONVERGING, PLUMMETING, MACD, MACD_MIN, MACD_MAX, MACD_SIGNAL, REGRESSION_RANGE, CLOSE
 
 SIGNAL: str = 'SIGNAL'
 TREND: str = 'TREND'
@@ -116,7 +112,6 @@ def _interpret_state(trend: str, angle: float) -> str:
     return state
 
 def macd_analysis(result: Queue,
-                  interval: float,
                   data_frame: DataFrame,
                   settings: Dict[str, int],
                   **kwargs: str) -> None:
