@@ -4,143 +4,155 @@ from math import acos, degrees
 
 from queue import Queue
 
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 
+from app.analysis.technical_analysis import TechnicalAnalysis
 from app.analysis.constants import BEARISH, BULLISH, CROSSOVER, SOARING, DIVERGING, RANGING, \
     CONVERGING, PLUMMETING, MACD, MACD_MIN, MACD_MAX, MACD_SIGNAL, REGRESSION_RANGE, CLOSE
 
-SIGNAL: str = 'SIGNAL'
-TREND: str = 'TREND'
+class MacdAnalysis(TechnicalAnalysis):
 
-def _show_plot(data_frame: DataFrame, **kwargs: Any) -> None:
-    plot_1 = kwargs.get('plot', '')
-    plot_2 = plot.twinx()
-    plot_3 = plot_2.twiny()
+    _angle: Optional[float] = None
+    _trend_df: Optional[DataFrame] = None
 
-    red: str = 'red'
-    blue: str = 'blue'
-    black: str = 'black'
-    orange: str = 'orange'
-    pink: str = 'pink'
+    def __init__(self,
+                 macd_min: int,
+                 macd_max: int,
+                 macd_signal: int,
+                 regression_range: int,
+                 config: Dict[str, Any],
+                 data_frame: DataFrame) -> None:
+        
+        super().__init__(config, data_frame[CLOSE])
+        
+        self._macd_min: int = macd_min
+        self._macd_max: int = macd_max
+        self._macd_signal: int = macd_signal
+        self._regression_range: int = regression_range
 
-    plot_1.set_ylabel('Closing Price', color=black)
-    plot_1.plot(data_frame[CLOSE], color=black)
-    plot_1.tick_params(axis='y', labelcolor=black)
-
-    plot_2.set_ylabel(MACD, color=red)
-    plot_2.plot(data_frame[MACD], color=red)
-    plot_2.tick_params(axis='y', labelcolor=red)
-
-    plot_3.set_ylabel(SIGNAL, color=blue)
-    plot_3.plot(data_frame[SIGNAL], color=blue)
-    plot_3.tick_params(axis='y', labelcolor=blue)
-
-def _identify_trend(macd_min: int,
-                    macd_max: int,
-                    macd_signal: int,
-                    data_frame: DataFrame,) -> None:
-
-    data_frame[MACD] = \
-        data_frame[CLOSE].ewm(span=macd_min).mean() - \
-        data_frame[CLOSE].ewm(span=macd_max).mean()
-
-    data_frame[SIGNAL] = data_frame[MACD]\
-        .ewm(span=macd_signal)\
-        .mean()
-
-    data_frame[TREND] = data_frame[MACD] > data_frame[SIGNAL]
- 
-def _interpret_trend(data_frame: DataFrame) -> str:
-    length: int = len(data_frame.index)
-    previous_index: int = length - 2
-    current_index: int = length - 1
-
-    current_position: DataFrame = data_frame.loc[current_index, TREND]
-    previous_position: DataFrame = data_frame.loc[previous_index, TREND]
-
-    trend: str = ''
-    if current_position != previous_position:
-        trend = CROSSOVER
-    else:
-        if current_position:
-            trend = BULLISH
-        else:
-            trend = BEARISH
-    return trend
-
-def _identify_trend_angle(regression_range: int, data_frame: DataFrame) -> float:
-    tail: DataFrame = data_frame.tail(regression_range)
-    slope, _ = polyfit(range(regression_range), tail[CLOSE], 1)
-
-    cosine_value: float = 0
-    if slope > 0:
-        cosine_value = regression_range/slope % 1
-    elif slope < 0:
-        cosine_value = -(regression_range/slope % 1)
-    else:
-        cosine_value = 0
-
-    return degrees(acos(cosine_value))
-
-def _interpret_state(trend: str, angle: float) -> str:
-    def is_ranging() -> bool:
-        return -5 <= angle < 5
-
-    def is_plummeting() -> bool:
-        return -90 <= angle < -80
-    
-    def is_soaring() -> bool:
+    @staticmethod
+    def is_soaring(angle: float) -> bool:
         return 80 <= angle < 90
 
-    def is_diverging() -> bool:
+    @staticmethod
+    def is_diverging(angle: float) -> bool:
         return 5 <= angle < 80
-
-    def is_converging() -> bool:
+    
+    @staticmethod
+    def is_ranging(angle: float) -> bool:
+        return -5 <= angle < 5
+    
+    @staticmethod
+    def is_converging(angle: float) -> bool:
         return -80 <= angle < -5
 
-    state: str = ''
-    if is_ranging():
-        state = RANGING
-    elif is_plummeting():
-        state = PLUMMETING
-    elif is_soaring():
-        state = SOARING
-    elif is_diverging():
-        state = DIVERGING if trend == BULLISH else CONVERGING
-    elif is_converging:
-        state = CONVERGING if trend == BULLISH else DIVERGING
-    return state
+    @staticmethod
+    def is_plummeting(angle: float) -> bool:
+        return -90 <= angle < -80
+
+    def _calculate_trend(self) -> DataFrame:
+        def _calculate_ewm(column: str, span: float) -> DataFrame:
+            return self._data_frame.ewm(span=span).mean()
+
+        macd_df = \
+            _calculate_ewm(CLOSE, self._macd_min) - _calculate_ewm(CLOSE, self._macd_max)
+        signal_df = _calculate_ewm(MACD, self._macd_signal)
+        
+        return macd_df > signal_df
+    
+    def _calculate_trend_angle(self) -> float:
+        tail: DataFrame = self._data_frame.tail(self._regression_range)
+        slope, _ = polyfit(range(self._regression_range), tail, 1)
+
+        cosine_value: float = 0
+        if slope > 0:
+            cosine_value = self._regression_range / slope % 1
+        elif slope < 0:
+            cosine_value = -(self._regression_range / slope % 1)
+        else:
+            cosine_value = 0
+        print(slope)
+        print(cosine_value)
+        print(degrees(acos(cosine_value)) - 180)
+
+        return degrees(acos(cosine_value))
+
+    def _interpret_trend_angle(self, trend: str, angle: float) -> str:
+        state: str = ''
+        if self.is_ranging(angle):
+            state = RANGING
+        elif self.is_plummeting(angle):
+            state = PLUMMETING
+        elif self.is_soaring(angle):
+            state = SOARING
+        elif self.is_diverging(angle):
+            state = DIVERGING if trend == BULLISH else CONVERGING
+        elif self.is_converging(angle):
+            state = CONVERGING if trend == BULLISH else DIVERGING
+
+        return state
+
+    @staticmethod
+    def _interpret_trend(trend_df: DataFrame) -> str:
+        length: int = len(trend_df.index)
+
+        current_position: DataFrame = trend_df.iloc[length - 1]
+        previous_position: DataFrame = trend_df.iloc[length - 2]
+
+        trend: str = ''
+        if current_position != previous_position:
+            trend = CROSSOVER
+        else:
+            if current_position:
+                trend = BULLISH
+            else:
+                trend = BEARISH
+        return trend
+
+    def run_analysis(self) -> None:
+        self._trend_df = self._calculate_trend()
+        self._angle: float = self._calculate_trend_angle()
+    
+    def calculate_return_values(self) -> Tuple[str, str]:
+        if self._angle and self._trend_df is not None:
+            trend: str = self._interpret_trend(self._trend_df)
+            state: str = self._interpret_trend_angle(trend, self._angle)
+            return trend, state
+        else:
+            raise Exception('MACD: "run_analysis" was unabled to determine current averages')
+
 
 def macd_analysis(result: Queue,
                   data_frame: DataFrame,
-                  settings: Dict[str, int],
+                  config: Dict[str, int],
                   **kwargs: str) -> None:
 
-    macd_min: Optional[int] = settings.get(MACD_MIN)
-    macd_max: Optional[int] = settings.get(MACD_MAX)
-    macd_signal: Optional[int] = settings.get(MACD_SIGNAL)
+    macd_min: Optional[int] = config.get(MACD_MIN)
+    macd_max: Optional[int] = config.get(MACD_MAX)
+    macd_signal: Optional[int] = config.get(MACD_SIGNAL)
 
-    regression_range:  Optional[int] = settings.get(REGRESSION_RANGE)
+    regression_range:  Optional[int] = config.get(REGRESSION_RANGE)
 
     if macd_min and macd_max and macd_signal and regression_range:
-        _identify_trend(macd_min, macd_max, macd_signal, data_frame)
-        trend: str = _interpret_trend(data_frame)
-        state: str = _interpret_state(trend, _identify_trend_angle(regression_range, data_frame))       
-        result.put([trend, state])
+        macd: MacdAnalysis = MacdAnalysis(macd_max,
+                                          macd_max,
+                                          macd_signal,
+                                          regression_range,
+                                          config,
+                                          data_frame)
+        macd.run_analysis()     
+        result.put(macd.calculate_return_values())
     else:
         raise Exception('MACD: Lacks appropriate settings to run MACD analysis')
-
-    if kwargs.get('should_plot', False):
-        _show_plot(data_frame.tail(4), **kwargs)
 
 if __name__ == "__main__":
     import tkinter
     from matplotlib import pyplot
     from pylab import show
     from datetime import datetime as Datetime
-    from mock_constants import TESLA, TABLE_COLUMNS, MACD_SETTINGS
+    from app.analysis.mock_constants import TESLA, TABLE_COLUMNS, MACD_SETTINGS
 
-    should_plot: bool = True
+    should_plot: bool = False
 
     pyplot.close('all')
 
