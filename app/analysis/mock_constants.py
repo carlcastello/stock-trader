@@ -1,11 +1,11 @@
-from app.analysis.constants import MACD_MIN, MACD_MAX, MACD_SIGNAL, REGRESSION_RANGE
+from app.analysis.constants import MACD_MIN, MACD_MAX, MACD_SIGNAL, REGRESSION_SPAN
 
 
 MACD_SETTINGS = {
     MACD_MIN: 8,
     MACD_MAX: 12,
     MACD_SIGNAL: 2,
-    REGRESSION_RANGE: 4
+    REGRESSION_SPAN: 4
 }
 
 TABLE_COLUMNS = ['1. open', '2. high', '3. low', '4. close', '5. volume']

@@ -56,7 +56,7 @@ class RsiAnalysis(TechnicalAnalysis):
             self._current_average_gain, self._current_average_loss = self._initialize_current_averages()
         
 
-    def calculate_return_values(self) -> Tuple[float, float]:
+    def run_interpreter(self) -> Tuple[float, float]:
         if self._current_average_gain and self._current_average_loss:
             relative_strength: float = abs(self._current_average_gain / self._current_average_loss)
             relative_strength_index:float = 100 - (100 / (1 + relative_strength))
@@ -71,7 +71,7 @@ def rsi_analysis(queue: Queue, config: Dict[str, Any], data_frame: DataFrame) ->
     if periods:
         rsi: RsiAnalysis = RsiAnalysis(periods, config, data_frame)
         rsi.run_analysis()
-        queue.put(rsi.calculate_return_values())
+        queue.put(rsi.run_interpreter())
     else:
         raise Exception('RSI: Lacks appropriate settings to run RSI analysis')
 

@@ -8,7 +8,7 @@ from typing import List, Dict, Any, Optional, Tuple
 
 from app.analysis.technical_analysis import TechnicalAnalysis
 from app.analysis.constants import BEARISH, BULLISH, CROSSOVER, SOARING, DIVERGING, RANGING, \
-    CONVERGING, PLUMMETING, MACD, MACD_MIN, MACD_MAX, MACD_SIGNAL, REGRESSION_RANGE, CLOSE
+    CONVERGING, PLUMMETING, MACD, MACD_MIN, MACD_MAX, MACD_SIGNAL, REGRESSION_SPAN, CLOSE
 
 class MacdAnalysis(TechnicalAnalysis):
 
@@ -19,7 +19,7 @@ class MacdAnalysis(TechnicalAnalysis):
                  macd_min: int,
                  macd_max: int,
                  macd_signal: int,
-                 regression_range: int,
+                 regression_span: int,
                  config: Dict[str, Any],
                  data_frame: DataFrame) -> None:
         
@@ -28,7 +28,7 @@ class MacdAnalysis(TechnicalAnalysis):
         self._macd_min: int = macd_min
         self._macd_max: int = macd_max
         self._macd_signal: int = macd_signal
-        self._regression_range: int = regression_range
+        self._regression_span: int = regression_span
 
     @staticmethod
     def is_soaring(angle: float) -> bool:
@@ -61,19 +61,18 @@ class MacdAnalysis(TechnicalAnalysis):
         return macd_df > signal_df
     
     def _calculate_trend_angle(self) -> float:
-        tail: DataFrame = self._data_frame.tail(self._regression_range)
-        slope, _ = polyfit(range(self._regression_range), tail, 1)
+        slope, _ = self._calculate_slope_intercept(
+            self._regression_span,
+            self._data_frame.tail(self._regression_span)
+        )
 
         cosine_value: float = 0
         if slope > 0:
-            cosine_value = self._regression_range / slope % 1
+            cosine_value = self._regression_span / slope % 1
         elif slope < 0:
-            cosine_value = -(self._regression_range / slope % 1)
+            cosine_value = -(self._regression_span / slope % 1)
         else:
             cosine_value = 0
-        print(slope)
-        print(cosine_value)
-        print(degrees(acos(cosine_value)) - 180)
 
         return degrees(acos(cosine_value))
 
@@ -113,7 +112,7 @@ class MacdAnalysis(TechnicalAnalysis):
         self._trend_df = self._calculate_trend()
         self._angle: float = self._calculate_trend_angle()
     
-    def calculate_return_values(self) -> Tuple[str, str]:
+    def run_interpreter(self) -> Tuple[str, str]:
         if self._angle and self._trend_df is not None:
             trend: str = self._interpret_trend(self._trend_df)
             state: str = self._interpret_trend_angle(trend, self._angle)
@@ -131,7 +130,7 @@ def macd_analysis(result: Queue,
     macd_max: Optional[int] = config.get(MACD_MAX)
     macd_signal: Optional[int] = config.get(MACD_SIGNAL)
 
-    regression_range:  Optional[int] = config.get(REGRESSION_RANGE)
+    regression_range:  Optional[int] = config.get(REGRESSION_SPAN)
 
     if macd_min and macd_max and macd_signal and regression_range:
         macd: MacdAnalysis = MacdAnalysis(macd_max,
@@ -141,7 +140,7 @@ def macd_analysis(result: Queue,
                                           config,
                                           data_frame)
         macd.run_analysis()     
-        result.put(macd.calculate_return_values())
+        result.put(macd.run_interpreter())
     else:
         raise Exception('MACD: Lacks appropriate settings to run MACD analysis')
 

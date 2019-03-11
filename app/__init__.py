@@ -25,5 +25,6 @@ def start_app(symbol: str, config_spread_sheet_id: str, alpha_vantage_id: str) -
             args=(now, symbol, config_spread_sheet_id, time_stock_series_df.reset_index(drop=True))
         ).start()
 
+        print(time_stock_series_df)
     ticker: Ticker = Ticker(config_spread_sheet_id, _ticker_callback)
     ticker.run() 

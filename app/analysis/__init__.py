@@ -6,7 +6,7 @@ from threading import Thread
 from typing import Optional, List, Dict, Any, Tuple, Callable
 
 from app.google.google_sheet import GoogleSheet, Result
-from app.analysis.constants import MACD, MACD_MIN, MACD_MAX, MACD_SIGNAL, REGRESSION_RANGE, RSI, PERIODS
+from app.analysis.constants import MACD, MACD_MIN, MACD_MAX, MACD_SIGNAL, REGRESSION_SPAN, RSI, PERIODS
 from app.analysis.macd import macd_analysis
 from app.analysis.rsi import rsi_analysis
 
@@ -30,7 +30,7 @@ def _fetch_analysis_settings(queue: Queue, config_spread_sheet_id: str) -> None:
             MACD_MIN: macd_settings[0],
             MACD_MAX: macd_settings[1],
             MACD_SIGNAL: macd_settings[2],
-            REGRESSION_RANGE: macd_settings[3],
+            REGRESSION_SPAN: macd_settings[3],
         },
         RSI: {
             PERIODS: rsi_settings[0]

@@ -1,6 +1,7 @@
+from numpy import polyfit
 from pandas import DataFrame
 
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 
 class TechnicalAnalysis: 
 
@@ -8,8 +9,12 @@ class TechnicalAnalysis:
         self._config = config
         self._data_frame = data_frame
 
+    @staticmethod
+    def _calculate_slope_intercept(span: int, data_frame: DataFrame) -> Tuple[float, float]:
+        return polyfit(range(span), data_frame, 1) 
+
     def run_analysis(self) -> None:
         raise NotImplementedError()
     
-    def calculate_return_values(self) -> Any:
+    def run_interpreter(self) -> Any:
         raise NotImplementedError()
