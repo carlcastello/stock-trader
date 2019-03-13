@@ -59,22 +59,6 @@ class MacdAnalysis(TechnicalAnalysis):
         signal_df = _calculate_ewm(MACD, self._macd_signal)
         
         return macd_df > signal_df
-    
-    def _calculate_trend_angle(self) -> float:
-        slope, _ = self._calculate_slope_intercept(
-            self._regression_span,
-            self._data_frame.tail(self._regression_span)
-        )
-
-        cosine_value: float = 0
-        if slope > 0:
-            cosine_value = self._regression_span / slope % 1
-        elif slope < 0:
-            cosine_value = -(self._regression_span / slope % 1)
-        else:
-            cosine_value = 0
-
-        return degrees(acos(cosine_value))
 
     def _interpret_trend_angle(self, trend: str, angle: float) -> str:
         state: str = ''
@@ -110,7 +94,10 @@ class MacdAnalysis(TechnicalAnalysis):
 
     def run_analysis(self) -> None:
         self._trend_df = self._calculate_trend()
-        self._angle: float = self._calculate_trend_angle()
+        self._angle: float = self._calculate_regression_angle(
+            self._regression_span,
+            self._data_frame.tail(self._regression_span)
+        )
     
     def run_interpreter(self) -> Tuple[str, str]:
         if self._angle and self._trend_df is not None:
