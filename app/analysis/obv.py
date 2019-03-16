@@ -41,7 +41,7 @@ class ObvAnalysis(TechnicalAnalysis):
             df_tail[CLOSE]
         )
 
-    def run_interpreter(self) -> str:
+    def run_interpretor(self) -> str:
         if self._obv_slope is not None and self._price_slope is not None:
             if self._obv_slope > 0:
                 # OBV: Upward movement
@@ -56,7 +56,7 @@ class ObvAnalysis(TechnicalAnalysis):
                     return BULLISH
                 return NEGATIVE
         else:
-            raise Exception('OBV: "run_interpreter" was unabled to determine current volume movements')
+            raise Exception('OBV: "run_interpretor" was unable to determine current volume movements')
 
     def plot(self) -> None:
         if self._data_frame[OBV] is not None:
@@ -71,7 +71,7 @@ def obv_analysis(queue: Queue,  config: Dict[str, Any], data_frame: DataFrame) -
     if regression_span and multipliyer:
         obv: ObvAnalysis = ObvAnalysis(regression_span, multipliyer, config, data_frame)
         obv.run_analysis()
-        queue.put(obv.run_interpreter())
+        queue.put(obv.run_interpretor())
         if config.get('should_plot'):
             obv.plot()
     else:

@@ -99,13 +99,13 @@ class MacdAnalysis(TechnicalAnalysis):
             self._data_frame.tail(self._regression_span)
         )
     
-    def run_interpreter(self) -> Tuple[str, str]:
+    def run_interpretor(self) -> Tuple[str, str]:
         if self._angle and self._trend_df is not None:
             trend: str = self._interpret_trend(self._trend_df)
             state: str = self._interpret_trend_angle(trend, self._angle)
             return trend, state
         else:
-            raise Exception('MACD: "run_analysis" was unabled to determine current averages')
+            raise Exception('MACD: "run_analysis" was unable to determine current averages')
 
 
 def macd_analysis(result: Queue,
@@ -127,7 +127,7 @@ def macd_analysis(result: Queue,
                                           config,
                                           data_frame)
         macd.run_analysis()     
-        result.put(macd.run_interpreter())
+        result.put(macd.run_interpretor())
     else:
         raise Exception('MACD: Lacks appropriate settings to run MACD analysis')
 

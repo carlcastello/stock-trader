@@ -36,5 +36,5 @@ class TechnicalAnalysis:
     def run_analysis(self) -> None:
         raise NotImplementedError()
     
-    def run_interpreter(self) -> Any:
+    def return_values(self) -> Any:
         raise NotImplementedError()
