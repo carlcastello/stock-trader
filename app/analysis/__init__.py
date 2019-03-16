@@ -6,7 +6,7 @@ from threading import Thread
 from typing import Optional, List, Dict, Any, Tuple, Callable
 
 from app.google.google_sheet import GoogleSheet, Result
-from app.analysis.constants import MACD, MACD_MIN, MACD_MAX, MACD_SIGNAL, REGRESSION_SPAN, RSI, PERIODS, OBV
+from app.analysis.constants import MACD, MIN, MAX, SIGNAL, SPAN, RSI, PERIODS, OBV
 from app.analysis.macd import macd_analysis
 from app.analysis.rsi import rsi_analysis
 
@@ -28,16 +28,15 @@ def _fetch_analysis_configs(queue: Queue, config_spread_sheet_id: str) -> None:
 
     queue.put({
         MACD: {
-            MACD_MIN: macd_configs[0],
-            MACD_MAX: macd_configs[1],
-            MACD_SIGNAL: macd_configs[2],
-            REGRESSION_SPAN: macd_configs[3],
+            MIN: macd_configs[0],
+            MAX: macd_configs[1],
+            SIGNAL: macd_configs[2],
         },
         RSI: {
             PERIODS: rsi_configs[0]
         },
         OBV: {
-            REGRESSION_SPAN: obv_configs[0]
+            SPAN: obv_configs[0]
         }
     })
 
@@ -56,8 +55,8 @@ def analysis(now: Datetime,
 
     macd_thread, macd_queue = _create_thread(
         macd_analysis,
-        time_stock_series_df.copy(),
-        configs.get(MACD, {})
+        configs.get(MACD, {}),
+        time_stock_series_df.copy()
     )
 
     rsi_thread, rsi_queue = _create_thread(

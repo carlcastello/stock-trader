@@ -4,7 +4,7 @@ from queue import Queue
 
 from typing import Dict, Any, Optional
 
-from app.analysis.constants import CLOSE, VOLUME, OBV, REGRESSION_SPAN, MULTIPLIYER, BEARISH, BULLISH, POSITIVE, NEGATIVE
+from app.analysis.constants import CLOSE, VOLUME, OBV, SPAN, MULTIPLIYER, BEARISH, BULLISH, POSITIVE, NEGATIVE
 from app.analysis.technical_analysis import TechnicalAnalysis
 
 class ObvAnalysis(TechnicalAnalysis):
@@ -12,9 +12,9 @@ class ObvAnalysis(TechnicalAnalysis):
     _obv_slope: Optional[float] = None
     _price_slope: Optional[float] = None
 
-    def __init__(self, regression_span: int, mutiplier: int, config: Dict[str, Any], data_frame: DataFrame) -> None: 
+    def __init__(self, _span: int, mutiplier: int, config: Dict[str, Any], data_frame: DataFrame) -> None: 
         super().__init__(config, data_frame[[CLOSE, VOLUME]].div(mutiplier))
-        self._regression_span = regression_span
+        self._span = _span
 
     @staticmethod
     def _calulcate_obv_multiplier(price_difference: float) -> int:
@@ -29,15 +29,15 @@ class ObvAnalysis(TechnicalAnalysis):
         multipliyer_df: DataFrame = self._data_frame[CLOSE].diff().fillna(0).apply(self._calulcate_obv_multiplier)
         self._data_frame[OBV] = (self._data_frame[VOLUME] * multipliyer_df).cumsum()
 
-        df_tail: DataFrame = self._data_frame.tail(self._regression_span)
+        df_tail: DataFrame = self._data_frame.tail(self._span)
 
         self._obv_slope = self._calulate_regression_slope(
-            self._regression_span,
+            self._span,
             df_tail[OBV]
         )
 
         self._price_slope = self._calulate_regression_slope(
-            self._regression_span,
+            self._span,
             df_tail[CLOSE]
         )
 
@@ -60,12 +60,12 @@ class ObvAnalysis(TechnicalAnalysis):
 
     def plot(self) -> None:
         if self._data_frame[OBV] is not None:
-            self._plot(self._data_frame[OBV].tail(self._regression_span))
+            self._plot(self._data_frame[OBV].tail(self._span))
         else:
             raise Exception('OBV: Lacks appropriate settings to plot OBV analysis')
 
 def obv_analysis(queue: Queue,  config: Dict[str, Any], data_frame: DataFrame) -> None:
-    regression_span: Optional[int] = config.get(REGRESSION_SPAN)
+    regression_span: Optional[int] = config.get(SPAN)
     multipliyer: Optional[int] = config.get(MULTIPLIYER)
 
     if regression_span and multipliyer:
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     obv_analysis(
         queue,
         {
-            REGRESSION_SPAN: 10,
+            SPAN: 10,
             MULTIPLIYER: 1000,
             'should_plot': True
         },

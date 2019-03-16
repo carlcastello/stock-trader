@@ -5,7 +5,7 @@ from queue import Queue
 from typing import Tuple, Optional, Dict, Any, List
 
 from app.analysis.technical_analysis import TechnicalAnalysis
-from app.analysis.constants import CLOSE, PERIODS,PREVIOUS_AVERAGE_GAIN, PREVIOUS_AVERAGE_LOSS
+from app.analysis.constants import RSI, RS, CLOSE, PERIODS, PREV_AVG_GAIN, PREV_AVG_LOSS, AVG_GAIN, AVG_LOSS, CHANGES
 
 class RsiAnalysis(TechnicalAnalysis):
 
@@ -59,23 +59,19 @@ class RsiAnalysis(TechnicalAnalysis):
     def run_analysis(self) -> None:
         initial_average_gain, initial_average_loss = self._initialize_averages()
 
-        self._data_frame.loc[self._periods, ['AVG_GAIN', 'AVG_LOSS', 'RS', 'RSI']] = \
+        self._data_frame.loc[self._periods, [AVG_GAIN, AVG_LOSS, RS, RSI]] = \
             initial_average_gain, initial_average_loss, *self._calculate_rsi(initial_average_gain, initial_average_loss)
 
         for index, row in self._data_frame[self._periods + 1:].iterrows():
             average_gain, average_loss = \
-                self._calculate_averages(row['CHANGES'], *self._data_frame.loc[index - 1, ['AVG_GAIN', 'AVG_LOSS']])
+                self._calculate_averages(row[CHANGES], *self._data_frame.loc[index - 1, [AVG_GAIN, AVG_LOSS]])
 
-            self._data_frame.loc[index, ['AVG_GAIN', 'AVG_LOSS', 'RS', 'RSI']] = \
+            self._data_frame.loc[index, [AVG_GAIN, AVG_LOSS, RS, RSI]] = \
                 average_gain, average_loss, *self._calculate_rsi(average_gain, average_loss)
 
     def return_values(self) -> Tuple[float, float, float, float, float, float, List[float]]:
-        rsi_tail_df: DataFrame = self._data_frame.tail(4)['RSI']
-
-        return (
-            rsi_tail_df.iloc[-1], rsi_tail_df.iloc[-2], rsi_tail_df.min(), rsi_tail_df.max(),
-            rsi_tail_df.mean(), self._calulate_regression_slope(4, rsi_tail_df), rsi_tail_df.tolist()
-        )
+        rsi_tail_df: DataFrame = self._data_frame.tail(4)[RSI]
+        return self._return_quantative_values(rsi_tail_df)
 
 def rsi_analysis(queue: Queue, config: Dict[str, Any], data_frame: DataFrame) -> None:
     periods: Optional[int] = config.get(PERIODS)
@@ -94,9 +90,7 @@ if __name__ == "__main__":
     rsi_analysis(
         queue,
         {
-            PERIODS: 14,
-            PREVIOUS_AVERAGE_GAIN: 0.2385714285714283,
-            PREVIOUS_AVERAGE_LOSS: -0.0999999999999999
+            PERIODS: 14
         },
         DataFrame(
             [
