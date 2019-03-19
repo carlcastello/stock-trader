@@ -5,7 +5,7 @@ from queue import Queue
 from typing import Tuple, Optional, Dict, Any, List
 
 from app.analysis.technical_analysis import TechnicalAnalysis
-from app.analysis.constants import RSI, RS, CLOSE, PERIODS, PREV_AVG_GAIN, PREV_AVG_LOSS, AVG_GAIN, AVG_LOSS, CHANGES
+from app.analysis.constants import RSI, RS, CLOSE, PERIODS, PREV_AVG_GAIN, PREV_AVG_LOSS, AVG_GAIN, AVG_LOSS
 
 class RsiAnalysis(TechnicalAnalysis):
 
@@ -14,7 +14,6 @@ class RsiAnalysis(TechnicalAnalysis):
 
     def __init__(self, periods: int, config: Dict[str, Any] , data_frame: DataFrame):
  
-        data_frame['CHANGES'] = data_frame.diff()
         data_frame['AVG_GAIN'] = nan
         data_frame['AVG_LOSS'] = nan
         data_frame['RS'] = nan
@@ -63,8 +62,9 @@ class RsiAnalysis(TechnicalAnalysis):
             initial_average_gain, initial_average_loss, *self._calculate_rsi(initial_average_gain, initial_average_loss)
 
         for index, row in self._data_frame[self._periods + 1:].iterrows():
+            current_difference: float = self._data_frame.loc[index - 1, CLOSE] - self._data_frame.loc[index, CLOSE] 
             average_gain, average_loss = \
-                self._calculate_averages(row[CHANGES], *self._data_frame.loc[index - 1, [AVG_GAIN, AVG_LOSS]])
+                self._calculate_averages(current_difference, *self._data_frame.loc[index - 1, [AVG_GAIN, AVG_LOSS]])
 
             self._data_frame.loc[index, [AVG_GAIN, AVG_LOSS, RS, RSI]] = \
                 average_gain, average_loss, *self._calculate_rsi(average_gain, average_loss)
@@ -84,7 +84,7 @@ def rsi_analysis(queue: Queue, config: Dict[str, Any], data_frame: DataFrame) ->
         raise Exception('RSI: Lacks appropriate settings to run RSI analysis')
 
 if __name__ == "__main__":
-    from app.analysis.mock_constants import TESLA, TABLE_COLUMNS
+    from app.analysis.mock_constants import TESLA
 
     queue: Queue = Queue(1)
     rsi_analysis(
@@ -92,27 +92,7 @@ if __name__ == "__main__":
         {
             PERIODS: 14
         },
-        DataFrame(
-            [
-                44.34, 44.09,
-                44.15, 43.61,
-                44.33, 44.83,
-                45.10, 45.42,
-                45.84, 46.08,
-                45.89, 46.03,
-                45.61, 46.28,
-                46.28, 46.00,
-                46.03, 46.41,
-                46.22, 45.64,
-                46.21, 46.25,
-                45.71, 46.45,
-                45.78, 45.35,
-                44.03, 44.18,
-                44.22, 44.57,
-                43.42, 42.66
-            ],
-            columns=[CLOSE]
-        )
+        TESLA
     );
 
     print(queue.get())

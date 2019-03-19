@@ -78,7 +78,7 @@ def obv_analysis(queue: Queue,  config: Dict[str, Any], data_frame: DataFrame) -
         raise Exception('OBV: Lacks appropriate settings to run OBV analysis')
 
 if __name__ == "__main__":
-    from app.analysis.mock_constants import TESLA, TABLE_COLUMNS
+    from app.analysis.mock_constants import TESLA
 
     queue: Queue = Queue(1)
     obv_analysis(
@@ -88,5 +88,5 @@ if __name__ == "__main__":
             MULTIPLIYER: 1000,
             'should_plot': True
         },
-        DataFrame(TESLA, columns=TABLE_COLUMNS)
+        TESLA
     )

@@ -71,7 +71,7 @@ if __name__ == "__main__":
     from matplotlib import pyplot
     from pylab import show
     from datetime import datetime as Datetime
-    from app.analysis.mock_constants import TESLA, TABLE_COLUMNS
+    from app.analysis.mock_constants import TESLA
 
     should_plot: bool = False
 
@@ -88,7 +88,7 @@ if __name__ == "__main__":
             MAX: 12,
             SIGNAL: 2,
         },
-        DataFrame(TESLA, columns=TABLE_COLUMNS),
+        TESLA
     )
 
     print(result.get())

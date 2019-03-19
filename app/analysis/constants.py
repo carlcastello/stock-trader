@@ -1,3 +1,5 @@
+HIGH: str = '2. high'
+LOW: str = '3. low'
 CLOSE: str = '4. close'
 VOLUME: str = '5. volume'
 
@@ -21,7 +23,7 @@ PLUMMETING: str = 'PLUMMETING'
 
 RSI: str = 'RSI'
 RS: str = 'RS'
-CHANGES: str = 'CHANGES'
+# CHANGES: str = 'CHANGES'
 AVG_LOSS: str = 'AVG_LOSS'
 AVG_GAIN: str = 'AVG_GAIN'
 PERIODS: str = 'PERIODS'
@@ -32,3 +34,8 @@ OBV: str = 'OBV'
 MULTIPLIYER: str ='MULTIPLIYER'
 POSITIVE: str = 'POSITIVE'
 NEGATIVE: str = 'NEGATIVE'
+
+ADX: str = 'ADX'
+TR: str = 'TR'
+POS_DM: str = 'POS_DM'
+NEG_DM: str = 'NEG_DM'
