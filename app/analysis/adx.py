@@ -71,22 +71,22 @@ class AdxAnalysis(TechnicalAnalysis):
     def run_analysis(self) -> None:
 
         for index, (_, high, low, close, _, tr, pos_dm, neg_dm, tr_avg, pos_dm_avg, neg_dm_avg, _, _, _, _) in self._data_frame[1:].iterrows():
-            _, prev_high, prev_low, prev_close, _, prev_tr, _, _, prev_tr_avg, prev_pos_dm_avg, prev_neg_dm_avg, _, _, _, _ = self._data_frame.iloc[index - 1]
+            _, prev_high, prev_low, prev_close, _, prev_tr, _, _, prev_tr_avg, prev_pos_dm_avg, prev_neg_dm_avg, _, _, _, _ = \
+                 self._data_frame.iloc[index - 1]
 
-            self._data_frame.loc[index, self._diff_columns] = self._calculate_dm(high, low, prev_high, prev_low, prev_close)
+            tr, pos_dm, neg_dm = self._calculate_dm(high, low, prev_high, prev_low, prev_close)
+            self._data_frame.loc[index, self._diff_columns] = tr, pos_dm, neg_dm
 
             if index >= self._periods:
                 tr_avg, pos_dm_avg, neg_dm_avg = self._calculate_dm_average(
                     index, tr, pos_dm, neg_dm,
                     prev_tr_avg, prev_pos_dm_avg, prev_neg_dm_avg
                 )
-                print(self._calculate_di(tr_avg, pos_dm_avg, neg_dm_avg))
                 self._data_frame.loc[index, self._dm_avg_columns] = tr_avg, pos_dm_avg, neg_dm_avg
-
                 self._data_frame.loc[index, self._di_columns] = self._calculate_di(tr_avg, pos_dm_avg, neg_dm_avg)
 
-        # print(self._data_frame)
-        # print(self._data_frame['POS_DI'])
+        print(self._data_frame)
+ 
 
     def return_values(self) -> Tuple[float, float, float, float, float, float, List[float]]:
         return (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, [0.0])
