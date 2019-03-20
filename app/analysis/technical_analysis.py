@@ -34,9 +34,9 @@ class TechnicalAnalysis:
         pyplot.show()
 
 
-    def _return_quantative_values(self, df: DataFrame) -> Tuple[float, float, float, float, float, float, List[float]]:
+    def _return_quantative_values(self, span: int, df: DataFrame) -> Tuple[float, float, float, float, float, float, List[float]]:
         return (
-            df.iloc[-1], df.iloc[-2], df.min(), df.max(), df.mean(), self._calulate_regression_slope(4, df), df.tolist()
+            df.iloc[-1], df.iloc[-2], df.min(), df.max(), df.mean(), self._calulate_regression_slope(span, df), df.tolist()
         )
 
     def run_analysis(self) -> None:

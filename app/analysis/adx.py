@@ -4,7 +4,7 @@ from pandas import DataFrame
 
 from typing import Dict, Any, Tuple, List, Optional
 
-from app.analysis.constants import ADX, DX, NEG_DI, POS_DI, NEG_DM_AVG, POS_DM_AVG, TR_AVG, NEG_DM, POS_DM, TR, PERIODS
+from app.analysis.constants import ADX, DX, NEG_DI, POS_DI, NEG_DM_AVG, POS_DM_AVG, TR_AVG, NEG_DM, POS_DM, TR, PERIODS, SPAN
 from app.analysis.technical_analysis import TechnicalAnalysis
 
 class AdxAnalysis(TechnicalAnalysis):
@@ -13,7 +13,7 @@ class AdxAnalysis(TechnicalAnalysis):
     _dm_avg_columns: List[str] = [TR_AVG, POS_DM_AVG, NEG_DM_AVG]
     _dx_columns: List[str] = [POS_DI, NEG_DI, DX]
 
-    def __init__(self, queue: Queue, periods: int, config: Dict[str, Any], data_frame: DataFrame):
+    def __init__(self, queue: Queue, periods: int, span: int, config: Dict[str, Any], data_frame: DataFrame):
 
         data_frame[TR] = 0
         data_frame[POS_DM] = 0
@@ -28,6 +28,8 @@ class AdxAnalysis(TechnicalAnalysis):
 
         super().__init__(config, data_frame)
         
+        self._span: int = span
+
         self._periods: int = periods
         self._previous_periods: int = periods - 1
 
@@ -99,24 +101,33 @@ class AdxAnalysis(TechnicalAnalysis):
                 if index >= self._adx_period_start:
                     self._data_frame.loc[index, ADX] = self._calculate_adx(index, adx, prev_adx) 
 
-    def return_values(self) -> Tuple[float, float, float, float, float, float, List[float]]:
-        return (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, [0.0])
+    def return_values(self) -> Dict[str, Tuple[float, float, float, float, float, float, List[float]]]:
+        adx: DataFrame = self._data_frame.tail(self._span)[ADX]
+        pos_di: DataFrame = self._data_frame.tail(self._span)[POS_DI]
+        neg_di: DataFrame = self._data_frame.tail(self._span)[NEG_DI]
+
+        return {
+            ADX: self._return_quantative_values(self._span, adx),
+            POS_DI: self._return_quantative_values(self._span, pos_di),
+            NEG_DI: self._return_quantative_values(self._span, neg_di)
+        }
 
 def adx_analyis(queue: Queue, config: Dict[str, Any], data_frame: DataFrame) -> None:
     periods: Optional[int] = config.get(PERIODS)
+    span: Optional[int] = config.get(SPAN)
 
-    if periods:
-        adx: AdxAnalysis = AdxAnalysis(queue, periods, config, data_frame)
+    if periods and span:
+        adx: AdxAnalysis = AdxAnalysis(queue, periods, span, config, data_frame)
         adx.run_analysis()
         queue.put(adx.return_values())
     else:
-        raise Exception('ADX: Lacks appropriate settings to run RSI analysis')
+        raise Exception('ADX: Lacks appropriate settings to run ADX analysis')
 
 if __name__ == "__main__":
     from app.analysis.mock_constants import TESLA
 
     queue: Queue = Queue()
-    adx_analyis(queue, {PERIODS: 5}, TESLA)
+    adx_analyis(queue, {PERIODS: 7, SPAN: 7}, TESLA)
     print(queue.get())
 
 
