@@ -5,6 +5,8 @@ from matplotlib import pyplot
 
 from typing import Any, Dict, Tuple, List
 
+class ParametersNotCompleteException(Exception):
+    pass
 
 class TechnicalAnalysis: 
 

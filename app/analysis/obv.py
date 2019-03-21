@@ -5,7 +5,7 @@ from queue import Queue
 from typing import Dict, Any, Optional
 
 from app.analysis.constants import CLOSE, VOLUME, OBV, SPAN, MULTIPLIYER, BEARISH, BULLISH, POSITIVE, NEGATIVE
-from app.analysis.technical_analysis import TechnicalAnalysis
+from app.analysis.technical_analysis import TechnicalAnalysis, ParametersNotCompleteException
 
 class ObvAnalysis(TechnicalAnalysis):
 
@@ -69,13 +69,13 @@ def obv_analysis(queue: Queue,  config: Dict[str, Any], data_frame: DataFrame) -
     multipliyer: Optional[int] = config.get(MULTIPLIYER)
 
     if regression_span and multipliyer:
-        obv: ObvAnalysis = ObvAnalysis(regression_span, multipliyer, config, data_frame)
+        obv: ObvAnalysis = ObvAnalysis(regression_span, multipliyer, config, data_frame.copy())
         obv.run_analysis()
         queue.put(obv.run_interpretor())
         if config.get('should_plot'):
             obv.plot()
     else:
-        raise Exception('OBV: Lacks appropriate settings to run OBV analysis')
+        raise ParametersNotCompleteException('OBV: Lacks appropriate settings to run OBV analysis')
 
 if __name__ == "__main__":
     from app.analysis.mock_constants import TESLA

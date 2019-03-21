@@ -4,7 +4,7 @@ from queue import Queue
 
 from typing import Tuple, Optional, Dict, Any, List
 
-from app.analysis.technical_analysis import TechnicalAnalysis
+from app.analysis.technical_analysis import TechnicalAnalysis, ParametersNotCompleteException
 from app.analysis.constants import RSI, RS, CLOSE, PERIODS, SPAN, PREV_AVG_GAIN, PREV_AVG_LOSS, AVG_GAIN, AVG_LOSS
 
 class RsiAnalysis(TechnicalAnalysis):
@@ -84,11 +84,11 @@ def rsi_analysis(queue: Queue, config: Dict[str, Any], data_frame: DataFrame) ->
     span: Optional[int] = config.get(SPAN)
 
     if periods and span:
-        rsi: RsiAnalysis = RsiAnalysis(periods, span, config, data_frame)
+        rsi: RsiAnalysis = RsiAnalysis(periods, span, config, data_frame.copy())
         rsi.run_analysis()
         queue.put(rsi.return_values())
     else:
-        raise Exception('RSI: Lacks appropriate settings to run RSI analysis')
+        raise ParametersNotCompleteException('RSI: Lacks appropriate settings to run RSI analysis')
 
 if __name__ == "__main__":
     from app.analysis.mock_constants import TESLA
