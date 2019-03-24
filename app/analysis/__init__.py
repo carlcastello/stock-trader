@@ -6,7 +6,7 @@ from threading import Thread
 from typing import Optional, List, Dict, Any, Tuple, Callable
 
 from app.google.google_sheet import GoogleSheet, Result
-from app.analysis.constants import MACD, MIN, MAX, SIGNAL, SPAN, RSI, PERIODS, OBV, ADX
+from app.analysis.constants import MACD, MIN, MAX, SIGNAL, SPAN, RSI, PERIODS, OBV, MULTIPLIYER, ADX
 from app.analysis.macd import macd_analysis
 from app.analysis.rsi import rsi_analysis
 from app.analysis.obv import obv_analysis
@@ -23,38 +23,38 @@ def _create_thread(callable: Callable, *args: Any) -> Tuple[Thread, Queue]:
     return thread, queue
 
 def _fetch_analysis_configs(queue: Queue, config_spread_sheet_id: str) -> None:
-    configs: List[Result] = GoogleSheet(config_spread_sheet_id).batch_read('B14:B17', 'B20:B21', 'B24:B25')
-    
+    configs: List[Result] = GoogleSheet(config_spread_sheet_id).batch_read('B14:B17', 'B20:B21', 'B24:B25', 'B28:B29')
+
     macd_configs: List[int] = list(map(int, configs[0].column(0)))
     rsi_configs: List[int] = list(map(int, configs[1].column(0)))
     obv_configs: List[int] = list(map(int, configs[2].column(0)))
+    adx_configs: List[int] = list(map(int, configs[3].column(0)))
 
     queue.put({
         MACD: {
             MIN: macd_configs[0],
             MAX: macd_configs[1],
             SIGNAL: macd_configs[2],
+            SPAN: macd_configs[3]
         },
         RSI: {
-            PERIODS: rsi_configs[0]
+            PERIODS: rsi_configs[0],
+            SPAN: rsi_configs[1]
         },
         OBV: {
-            SPAN: obv_configs[0]
+            SPAN: obv_configs[0],
+            MULTIPLIYER: obv_configs[1]
+        },
+        ADX: {
+            PERIODS: adx_configs[0],
+            SPAN: adx_configs[1]
         }
     })
-
-def handle_result(queue: Queue) -> Optional[Any]:
-    try:
-        result = queue.get(block=False)
-    except Empty:
-        exc_type, exc_obj, exc_trace = result
-        print(exc_trace, exc_obj, exc_trace)
-    else:
-       return result
 
 def analysis(now: Datetime,
              symbol: str,
              config_spread_sheet_id: str,
+             web_hook_url: str,
              time_stock_series_df: DataFrame) -> None:
 
     configs_thread, configs_queue = _create_thread(
@@ -78,6 +78,7 @@ def analysis(now: Datetime,
     )
 
     obv_thread, obv_queue = _create_thread(
+
         obv_analysis,
         configs.get(OBV, {}),
         time_stock_series_df
@@ -94,41 +95,31 @@ def analysis(now: Datetime,
     obv_thread.start()
     adx_thread.start()
 
-    macd_queue.get(block=False)
-    rsi_queue.get(block=False)
-    obv_queue.get(block=False)
-    adx_queue.get(block=False)
+    print(macd_queue.get())
+    print(rsi_queue.get())
+    print(obv_queue.get())
+    print(adx_queue.get())
 
-# /    try:
-    #     # macd_queue.get()
-    #     # rsi_queue.get()
-    #     # obv_queue.get()
-    #     # adx_queue.get()
-    # except ParametersNotCompleteException as exception:
-    #     # macd_thread.join()
-    #     # rsi_thread.join()
-    #     # obv_thread.join()
-    #     # adx_thread.join()
-    #     print('-----------------------------------------------------------------')
-    #     raise exception
-    # else:
-    #     pass
-        # print(macd_queue.get(), rsi_queue.get())
 
 if __name__ == "__main__":
     from os import path, environ
     from dotenv import load_dotenv
     
-    from constants import COFING_SPREAD_SHEET_ID    
+    from constants import COFING_SPREAD_SHEET_ID, WEB_HOOK_URL  
     from app.analysis.mock_constants import TESLA
 
-    dotenv_path = path.join(path.dirname(__file__), f'../../env/.TSLA')
-    load_dotenv(dotenv_path)
+
+    file_path: str = path.dirname(__file__)
+    load_dotenv(path.join(file_path, '../../env/.TSLA'))
+    load_dotenv(path.join(file_path, '../../env/.COMMON'))
+
     config_spread_sheet_id: str = environ.get(COFING_SPREAD_SHEET_ID, '')
+    web_hook_url: str = environ.get(WEB_HOOK_URL, '')
 
     analysis(
         Datetime.now(),
         'TSLA',
-        environ.get(COFING_SPREAD_SHEET_ID, ''),
+        config_spread_sheet_id,
+        web_hook_url,
         TESLA
     )
