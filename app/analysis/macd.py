@@ -5,7 +5,7 @@ from math import acos, degrees
 
 from queue import Queue
 
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional, Tuple, Union
 
 from app.analysis.technical_analysis import TechnicalAnalysis, ParametersNotCompleteException
 from app.analysis.constants import MACD, MIN, MAX, CLOSE, SIGNAL, POSITION, SPAN
@@ -42,7 +42,7 @@ class MacdAnalysis(TechnicalAnalysis):
 
         self._data_frame[POSITION] = self._data_frame[MACD] >= self._data_frame[SIGNAL]
 
-    def return_values(self) -> Dict[str, Any]:
+    def return_values(self) -> Dict[str, Union[Tuple[float, float, float, float, float, float, float, List[float]], Tuple[bool, bool, List[bool]]]]:
         tail_df: DataFrame = self._data_frame[self._macd_columns].tail(self._span)        
         position_df = tail_df[POSITION]
 

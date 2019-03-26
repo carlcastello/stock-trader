@@ -11,7 +11,6 @@ class SlackAPI:
     def _post(self, data: Dict[str, Any]) -> None:
         try:
             response = post(url=self._url, data=dumps(data))
-            print(response.text) 
         except HTTPError as error:
             raise error
         except ConnectionError:

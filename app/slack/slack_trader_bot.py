@@ -4,7 +4,7 @@ from typing import Dict, Any, List, Optional
 
 from app.analysis.constants import ADX, POS_DI, NEG_DI, RSI, MACD, SIGNAL, POSITION, OBV
 
-class StockTraderBot(SlackAPI):
+class SlackTraderBot(SlackAPI):
 
     _color: str = '#439FE0'
 
@@ -20,13 +20,13 @@ class StockTraderBot(SlackAPI):
     _qualitative_fields: List[str] = ['Current', 'Previous']
 
     _quantitative_analysis: List[str] = [ADX, POS_DI, NEG_DI, RSI, MACD, SIGNAL]
-    _quantitative_fields: List[str] = ['Current', 'Previous', 'Minimum', 'Maximum', 'Mean', 'Slope']
+    _quantitative_fields: List[str] = ['Current', 'Previous', 'Minimum', 'Maximum', 'Mean', 'Median', 'Slope']
 
     def __init__(self, symbol: str, url: str):
         super().__init__(url)
         self._symbol: str = symbol
 
-    def _build_payload(self, key: str, field_keys: List[str], result: Any) -> Dict[str, Any]: 
+    def _build_payload(self, key: str, field_keys: List[str], result: List[Any]) -> Dict[str, Any]: 
         fallback: str = f'{key}:'
         fields: List[Dict[str, Any]] = []
 
@@ -68,7 +68,6 @@ class StockTraderBot(SlackAPI):
             if result and fields:
                 attatchments.append(self._build_payload(key, fields, result))
 
-
         self._post({
             'text': f'*Symbol*: `{self._symbol}` \n *Suggestion*: `{suggestion}` \n <!channel|channel>',
             'attachments': attatchments
@@ -85,7 +84,7 @@ if __name__ == "__main__":
     load_dotenv(path.join(file_path, '../../env/.COMMON'))
 
     web_hook_url: str = environ.get(WEB_HOOK_URL, '')
-    stock_trader_bot: StockTraderBot = StockTraderBot('TESLA', web_hook_url)
+    stock_trader_bot: SlackTraderBot = SlackTraderBot('TESLA', web_hook_url)
 
     results: Dict[str, Any] = {
         RSI: (38.89207954405839, 39.32179006735938, 36.384792388365135, 39.32179006735938, 37.99562454646287, 0.3855717821057254, [37.87077060188745, 37.50869013064398, 36.384792388365135, 39.32179006735938, 38.89207954405839])

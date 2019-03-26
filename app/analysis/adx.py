@@ -101,7 +101,7 @@ class AdxAnalysis(TechnicalAnalysis):
                 if index >= self._adx_period_start:
                     self._data_frame.loc[index, ADX] = self._calculate_adx(index, dx, prev_adx) 
 
-    def return_values(self) -> Dict[str, Tuple[float, float, float, float, float, float, List[float]]]:
+    def return_values(self) -> Dict[str, Tuple[float, float, float, float, float, float, float, List[float]]]:
         adx: DataFrame = self._data_frame.tail(self._span)[ADX]
         pos_di: DataFrame = self._data_frame.tail(self._span)[POS_DI]
         neg_di: DataFrame = self._data_frame.tail(self._span)[NEG_DI]

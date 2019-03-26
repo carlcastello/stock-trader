@@ -2,7 +2,7 @@ from numpy import where
 from pandas import DataFrame
 from queue import Queue
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 
 from app.analysis.constants import CLOSE, VOLUME, OBV, SPAN, MULTIPLIYER, BEARISH, BULLISH, POSITIVE, NEGATIVE
 from app.analysis.technical_analysis import TechnicalAnalysis, ParametersNotCompleteException
@@ -41,20 +41,22 @@ class ObvAnalysis(TechnicalAnalysis):
             df_tail[CLOSE]
         )
 
-    def run_interpretor(self) -> str:
+    def run_interpretor(self) -> Dict[str, Tuple[str]]:
         if self._obv_slope is not None and self._price_slope is not None:
+            state: str = ''
             if self._obv_slope > 0:
                 # OBV: Upward movement
                 if self._price_slope <= 0:
                     # PRICE: Downward movement
-                    return BEARISH
-                return POSITIVE 
+                    state = BEARISH
+                state = POSITIVE 
             else:
                 # OBV: Downward movement
                 if self._price_slope > 0:
                     # PRICE: Upward Movement
-                    return BULLISH
-                return NEGATIVE
+                    state = BULLISH
+                state = NEGATIVE
+            return { OBV: (state,) }
         else:
             raise Exception('OBV: "run_interpretor" was unable to determine current volume movements')
 

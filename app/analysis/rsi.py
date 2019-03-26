@@ -75,9 +75,11 @@ class RsiAnalysis(TechnicalAnalysis):
 
             self._data_frame.loc[index, self._rsi_columns] = avg_gain, avg_loss, rs, rsi
 
-    def return_values(self) -> Tuple[float, float, float, float, float, float, List[float]]:
+    def return_values(self) -> Dict[str, Tuple[float, float, float, float, float, float, float, List[float]]]:
         rsi_tail_df: DataFrame = self._data_frame.tail(self._span)[RSI]
-        return self._return_quantative_values(self._span, rsi_tail_df)
+        return {
+            RSI: self._return_quantative_values(self._span, rsi_tail_df)
+        }
 
 def rsi_analysis(queue: Queue, config: Dict[str, Any], data_frame: DataFrame) -> None:
     periods: Optional[int] = config.get(PERIODS)

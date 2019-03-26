@@ -6,6 +6,7 @@ from threading import Thread
 from typing import Optional, List, Dict, Any, Tuple, Callable
 
 from app.google.google_sheet import GoogleSheet, Result
+from app.slack.slack_trader_bot import SlackTraderBot 
 from app.analysis.constants import MACD, MIN, MAX, SIGNAL, SPAN, RSI, PERIODS, OBV, MULTIPLIYER, ADX
 from app.analysis.macd import macd_analysis
 from app.analysis.rsi import rsi_analysis
@@ -22,7 +23,7 @@ def _create_thread(callable: Callable, *args: Any) -> Tuple[Thread, Queue]:
     )
     return thread, queue
 
-def _fetch_analysis_configs(queue: Queue, config_spread_sheet_id: str) -> None:
+def _fetch_analysis_configs(config_spread_sheet_id: str) -> Dict[str, Any]:
     configs: List[Result] = GoogleSheet(config_spread_sheet_id).batch_read('B14:B17', 'B20:B21', 'B24:B25', 'B28:B29')
 
     macd_configs: List[int] = list(map(int, configs[0].column(0)))
@@ -30,7 +31,7 @@ def _fetch_analysis_configs(queue: Queue, config_spread_sheet_id: str) -> None:
     obv_configs: List[int] = list(map(int, configs[2].column(0)))
     adx_configs: List[int] = list(map(int, configs[3].column(0)))
 
-    queue.put({
+    return {
         MACD: {
             MIN: macd_configs[0],
             MAX: macd_configs[1],
@@ -49,7 +50,29 @@ def _fetch_analysis_configs(queue: Queue, config_spread_sheet_id: str) -> None:
             PERIODS: adx_configs[0],
             SPAN: adx_configs[1]
         }
-    })
+    }
+
+def _run_analysis(configs: Dict[str, Any], time_stock_series_df: DataFrame) -> Dict[str, Tuple]:
+
+    macd_thread, macd_queue = _create_thread(macd_analysis, configs.get(MACD, {}), time_stock_series_df)
+    rsi_thread, rsi_queue = _create_thread(rsi_analysis, configs.get(RSI, {}), time_stock_series_df)
+    adx_thread, adx_queue = _create_thread(adx_analyis, configs.get(ADX, {}), time_stock_series_df)
+    obv_thread, obv_queue = _create_thread(obv_analysis, configs.get(OBV, {}), time_stock_series_df)
+
+    macd_thread.start()
+    rsi_thread.start()
+    obv_thread.start()
+    adx_thread.start()
+
+    return {
+        **macd_queue.get(),
+        **rsi_queue.get(),
+        **obv_queue.get(),
+        **adx_queue.get()
+    }
+
+def _interpret_analysis() -> str:
+    return 'SELL'
 
 def analysis(now: Datetime,
              symbol: str,
@@ -57,49 +80,13 @@ def analysis(now: Datetime,
              web_hook_url: str,
              time_stock_series_df: DataFrame) -> None:
 
-    configs_thread, configs_queue = _create_thread(
-        _fetch_analysis_configs,
-        config_spread_sheet_id
-    )
+    slack_trader_bot: SlackTraderBot = SlackTraderBot(symbol, web_hook_url)
+    configs: Dict[str, Any] = _fetch_analysis_configs(config_spread_sheet_id)
 
-    configs_thread.start()
-    configs: Dict[str, Any] = configs_queue.get()
+    analysis_results: Dict[str, Tuple] = _run_analysis(configs, time_stock_series_df)
+    suggestion: str = _interpret_analysis()
 
-    macd_thread, macd_queue = _create_thread(
-        macd_analysis,
-        configs.get(MACD, {}),
-        time_stock_series_df
-    )
-
-    rsi_thread, rsi_queue = _create_thread(
-        rsi_analysis,
-        configs.get(RSI, {}),
-        time_stock_series_df
-    )
-
-    obv_thread, obv_queue = _create_thread(
-
-        obv_analysis,
-        configs.get(OBV, {}),
-        time_stock_series_df
-    )
-
-    adx_thread, adx_queue = _create_thread(
-        adx_analyis,
-        configs.get(ADX, {}),
-        time_stock_series_df
-    )
-
-    macd_thread.start()
-    rsi_thread.start()
-    obv_thread.start()
-    adx_thread.start()
-
-    print(macd_queue.get())
-    print(rsi_queue.get())
-    print(obv_queue.get())
-    print(adx_queue.get())
-
+    slack_trader_bot.post(suggestion, analysis_results)
 
 if __name__ == "__main__":
     from os import path, environ
