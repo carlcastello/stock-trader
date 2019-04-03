@@ -19,7 +19,6 @@ def main() -> None:
     load_dotenv(path.join(file_path, f'env/.COMMON'))
 
     alpha_vantage_id: Optional[str] = environ.get(ALPHA_VANTAGE_ID)
-    # config_spread_sheet_id: Optional[str] = environ.get(COFING_SPREAD_SHEET_ID)
     symbol: Optional[str] = environ.get(SYMBOL)
     web_hook_url: Optional[str] = environ.get(WEB_HOOK_URL)
 

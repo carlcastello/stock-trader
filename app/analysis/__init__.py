@@ -52,23 +52,23 @@ def _run_analysis(configs: Dict[str, Any], time_stock_series_df: DataFrame) -> D
         ADX: adx_queue.get()
     }
 
-def _interpret_analysis(results: Dict[str, Dict[str, Tuple]]) ->  str:
+def _interpret_analysis(results: Dict[str, Dict[str, Tuple]]) ->  List[str]:
     adx_curr_pos, adx_prev_pos = results[ADX][POSITION]
     rsi_curr_pos, rsi_prev_pos = results[RSI][POSITION]
     macd_curr_pos, macd_prev_pos = results[MACD][POSITION]
 
-    message: str = ''
+    messages: List[str] = []
 
     if adx_curr_pos != adx_prev_pos:
-        message += f'*{ADX}* - Previous: {adx_prev_pos}, Current: {adx_curr_pos}\n'
+        messages.append(f'*{ADX}* - Previous: {adx_prev_pos}, Current: {adx_curr_pos}\n')
     
     if rsi_curr_pos != rsi_prev_pos:
-        message += f'*{RSI}* - Previous: {rsi_prev_pos}, Current: {rsi_curr_pos}\n'
+        messages.append(f'*{RSI}* - Previous: {rsi_prev_pos}, Current: {rsi_curr_pos}\n')
 
     if macd_curr_pos != macd_prev_pos:
-        message += f'*{MACD}* - Previous: {macd_prev_pos}, Current: {macd_curr_pos}\n'
+        messages.append(f'*{MACD}* - Previous: {macd_prev_pos}, Current: {macd_curr_pos}\n')
 
-    return message
+    return messages
 
 def analysis(now: Datetime,
              symbol: str,
@@ -80,7 +80,7 @@ def analysis(now: Datetime,
     configs: Dict[str, Any] = _fetch_analysis_configs(symbol, *firebase)
 
     analysis_results: Dict[str, Dict[str, Tuple]] = _run_analysis(configs, time_stock_series_df)
-    message: str = _interpret_analysis(analysis_results)
+    message: List[str] = _interpret_analysis(analysis_results)
 
     if message:
         slack_trader_bot.post(now, message, analysis_results)

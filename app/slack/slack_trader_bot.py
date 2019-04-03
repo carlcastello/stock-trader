@@ -12,23 +12,13 @@ class SlackTraderBot(SlackAPI):
     _footer_name: str = 'StockTraderBot'
     _footer_icon: str = 'https://platform.slack-edge.com/img/default_application_icon.png'
 
-    # _order: List[str] = [ADX, POS_DI, NEG_DI, RSI, MACD, SIGNAL, POSITION, OBV]
-    # _quantitative_feilds: List[str] = ['Curr', 'Prev', 'Min', 'Max', 'Mean', 'Slope']
-
-    # _boolead_analysis: List[str] = [OBV]
-    # _boolean_fields: List[str] = ['Current']
-
-    # _qualitative_analysis: List[str] = [POSITION]
-    # _qualitative_fields: List[str] = ['Current', 'Previous']
-
-    # _quantitative_analysis: List[str] = [ADX, POS_DI, NEG_DI, RSI, MACD, SIGNAL]
     _quantitative_fields: List[str] = ['Current', 'Previous', 'Minimum', 'Maximum', 'Mean', 'Median', 'Slope']
 
     def __init__(self, symbol: str, url: str):
         super().__init__(url)
         self._symbol: str = symbol
 
-    _analysis_types: List[str] = [MACD, OBV, ADX, RSI]
+    _analysis_types: List[str] = [OBV, MACD, ADX, RSI]
     _displayable_analysis_types: Dict[str, List[str]] = {
         MACD: [MACD],
         OBV: [OBV],
@@ -49,7 +39,7 @@ class SlackTraderBot(SlackAPI):
             'ts': now.timestamp()
         }
 
-    def post(self, now: Datetime, message: str, results: Dict[str, Dict[str, Tuple]]) -> None:
+    def post(self, now: Datetime, messages: List[str], results: Dict[str, Dict[str, Tuple]]) -> None:
         attachments: List[Dict[str, Any]] = []
 
         for analysis_type in self._analysis_types:
@@ -58,8 +48,10 @@ class SlackTraderBot(SlackAPI):
                 if key in displayable_types:
                     attachments.append(self._create_attachments(now, key, value))
 
+
+        message: str = '\n'.join(messages)
         self._post({
-            'text': f'<!channel|channel> \n *Date*: {now} \n *Message*: `{message}`',
+            'text': f'<!channel|channel> \n *Date*: {now} \n *Message*: ```{message}```',
             'attachments': attachments
         })
 
@@ -91,4 +83,4 @@ if __name__ == "__main__":
         }
     }
 
-    stock_trader_bot.post(Datetime.now(), 'BUY', results)
+    stock_trader_bot.post(Datetime.now(), [MACD, ADX, RSI, OBV], results)
