@@ -36,4 +36,4 @@ def start_app(symbol: str, alpha_vantage_id: str, web_hook_url: str, firbase_con
     firebase: Tuple[Auth, Any, str, str] = (fb_auth, fb_app.database(), fb_user['idToken'], fb_user['refreshToken'])
 
     ticker: Ticker = Ticker(symbol, firebase, _ticker_callback)
-    # ticker.run() 
+    ticker.run() 
