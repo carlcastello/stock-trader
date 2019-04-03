@@ -8,16 +8,15 @@ from alpha_vantage.timeseries import TimeSeries
 
 from typing import Optional, Dict, Any, Tuple
 
-from app.constants import FIREBASE_CONFIG
 from app.analysis import analysis
 from app.google.google_sheet import GoogleSheet
 from app.ticker import Ticker
 
-def start_app(symbol: str, config_spread_sheet_id: str, alpha_vantage_id: str, web_hook_url: str) -> None:
+def start_app(symbol: str, alpha_vantage_id: str, web_hook_url: str, firbase_config: Dict[str, str]) -> None:
     
     time_series: TimeSeries = TimeSeries(alpha_vantage_id, output_format='pandas')
 
-    fb_app: Firebase = initialize_app(FIREBASE_CONFIG)
+    fb_app: Firebase = initialize_app(firbase_config)
 
     fb_auth: Auth = fb_app.auth()
     fb_project_token: bytes = fb_auth.create_custom_token('7b89e2cf-0139-4ce2-95d8-d0f79bdf24fc')
