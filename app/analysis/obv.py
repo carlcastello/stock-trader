@@ -2,9 +2,9 @@ from numpy import where
 from pandas import DataFrame
 from queue import Queue
 
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, List
 
-from app.analysis.constants import CLOSE, VOLUME, OBV, SPAN, MULTIPLIER, BEARISH, BULLISH, POSITIVE, NEGATIVE
+from app.analysis.constants import CLOSE, VOLUME, OBV, SPAN, MULTIPLIER, BEARISH, BULLISH, POSITIVE, NEGATIVE, POSITION
 from app.analysis.technical_analysis import TechnicalAnalysis, ParametersNotCompleteException
 
 class ObvAnalysis(TechnicalAnalysis):
@@ -31,34 +31,11 @@ class ObvAnalysis(TechnicalAnalysis):
 
         df_tail: DataFrame = self._data_frame.tail(self._span)
 
-        self._obv_slope = self._calulate_regression_slope(
-            self._span,
-            df_tail[OBV]
-        )
-
-        self._price_slope = self._calulate_regression_slope(
-            self._span,
-            df_tail[CLOSE]
-        )
-
-    def run_interpretor(self) -> Dict[str, Tuple[str]]:
-        if self._obv_slope is not None and self._price_slope is not None:
-            state: str = ''
-            if self._obv_slope > 0:
-                # OBV: Upward movement
-                if self._price_slope <= 0:
-                    # PRICE: Downward movement
-                    state = BEARISH
-                state = POSITIVE 
-            else:
-                # OBV: Downward movement
-                if self._price_slope > 0:
-                    # PRICE: Upward Movement
-                    state = BULLISH
-                state = NEGATIVE
-            return { OBV: (state,) }
-        else:
-            raise Exception('OBV: "run_interpretor" was unable to determine current volume movements')
+    def run_interpretor(self) -> Dict[str, Tuple[float, float, float, float, float, float, float, List[float]]]:
+        tail_df: DataFrame = self._data_frame.tail(self._span)
+        return {
+            OBV: self._return_quantative_values(self._span, tail_df[OBV])
+        }
 
     def plot(self) -> None:
         if self._data_frame[OBV] is not None:

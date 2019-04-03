@@ -57,18 +57,18 @@ def _interpret_analysis(results: Dict[str, Dict[str, Tuple]]) ->  Optional[str]:
     rsi_curr_pos, rsi_prev_pos = results[RSI][POSITION]
     macd_curr_pos, macd_prev_pos = results[MACD][POSITION]
 
-    suggestion: str = ''
+    message: str = ''
 
     if adx_curr_pos != adx_prev_pos:
-        suggestion += f'{ADX}: Trigger '
+        message += f'*{ADX}* - Previous: {adx_prev_pos}, Current: {adx_curr_pos}\n'
     
     if rsi_curr_pos != rsi_prev_pos:
-        suggestion += f'{RSI}: Trigger '
+        message += f'*{RSI}* - Previous: {rsi_prev_pos}, Current: {rsi_curr_pos}\n'
 
     if macd_curr_pos != macd_prev_pos:
-        suggestion += f'{MACD}: Trigger '
+        message += f'*{MACD}* - Previous: {macd_prev_pos}, Current: {macd_curr_pos}\n'
 
-    return suggestion
+    return message
 
 def analysis(now: Datetime,
              symbol: str,
@@ -80,10 +80,10 @@ def analysis(now: Datetime,
     configs: Dict[str, Any] = _fetch_analysis_configs(symbol, *firebase)
 
     analysis_results: Dict[str, Dict[str, Tuple]] = _run_analysis(configs, time_stock_series_df)
-    suggestion: Optional[str] = _interpret_analysis(analysis_results)
+    message: Optional[str] = _interpret_analysis(analysis_results)
 
-    if suggestion:
-        slack_trader_bot.post(suggestion, analysis_results)
+    if message:
+        slack_trader_bot.post(now, message, analysis_results)
 
 if __name__ == "__main__":
     from os import path, environ
