@@ -7,7 +7,7 @@ from typing import Optional, List, Dict, Any, Tuple, Callable
 
 from app.google.google_sheet import GoogleSheet, Result
 from app.slack.slack_trader_bot import SlackTraderBot 
-from app.analysis.constants import MACD, RSI, OBV, ADX
+from app.analysis.constants import MACD, RSI, OBV, ADX, POSITION, RANGING, OVER_BOUGHT, OVER_SOLD, TRENDING
 from app.analysis.macd import macd_analysis
 from app.analysis.rsi import rsi_analysis
 from app.analysis.obv import obv_analysis
@@ -33,7 +33,7 @@ def _fetch_analysis_configs(symbol: str, db: Any, auth_token: str) -> Dict[str, 
         ADX: values[ADX]
     }
 
-def _run_analysis(configs: Dict[str, Any], time_stock_series_df: DataFrame) -> Dict[str, Tuple]:
+def _run_analysis(configs: Dict[str, Any], time_stock_series_df: DataFrame) -> Dict[str, Dict[str, Tuple]]:
 
     macd_thread, macd_queue = _create_thread(macd_analysis, configs.get(MACD, {}), time_stock_series_df)
     rsi_thread, rsi_queue = _create_thread(rsi_analysis, configs.get(RSI, {}), time_stock_series_df)
@@ -46,14 +46,29 @@ def _run_analysis(configs: Dict[str, Any], time_stock_series_df: DataFrame) -> D
     adx_thread.start()
 
     return {
-        **macd_queue.get(),
-        **rsi_queue.get(),
-        **obv_queue.get(),
-        **adx_queue.get()
+        MACD: macd_queue.get(),
+        RSI: rsi_queue.get(),
+        OBV: obv_queue.get(),
+        ADX: adx_queue.get()
     }
 
-def _interpret_analysis() -> str:
-    return 'SELL'
+def _interpret_analysis(results: Dict[str, Dict[str, Tuple]]) ->  Optional[str]:
+    adx_curr_pos, adx_prev_pos = results[ADX][POSITION]
+    rsi_curr_pos, rsi_prev_pos = results[RSI][POSITION]
+    macd_curr_pos, macd_prev_pos = results[MACD][POSITION]
+
+    suggestion: str = ''
+
+    if adx_curr_pos != adx_prev_pos:
+        suggestion += f'{ADX}: Trigger '
+    
+    if rsi_curr_pos != rsi_prev_pos:
+        suggestion += f'{RSI}: Trigger '
+
+    if macd_curr_pos != macd_prev_pos:
+        suggestion += f'{MACD}: Trigger '
+
+    return suggestion
 
 def analysis(now: Datetime,
              symbol: str,
@@ -64,10 +79,11 @@ def analysis(now: Datetime,
     slack_trader_bot: SlackTraderBot = SlackTraderBot(symbol, web_hook_url)
     configs: Dict[str, Any] = _fetch_analysis_configs(symbol, *firebase)
 
-    analysis_results: Dict[str, Tuple] = _run_analysis(configs, time_stock_series_df)
-    suggestion: str = _interpret_analysis()
+    analysis_results: Dict[str, Dict[str, Tuple]] = _run_analysis(configs, time_stock_series_df)
+    suggestion: Optional[str] = _interpret_analysis(analysis_results)
 
-    # slack_trader_bot.post(suggestion, analysis_results)
+    if suggestion:
+        slack_trader_bot.post(suggestion, analysis_results)
 
 if __name__ == "__main__":
     from os import path, environ

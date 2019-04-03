@@ -2,9 +2,10 @@ from queue import Queue
 from numpy import nan
 from pandas import DataFrame
 
-from typing import Dict, Any, Tuple, List, Optional
+from typing import Dict, Any, Tuple, List, Optional, Union
 
-from app.analysis.constants import ADX, DX, NEG_DI, POS_DI, NEG_DM_AVG, POS_DM_AVG, TR_AVG, NEG_DM, POS_DM, TR, PERIODS, SPAN
+from app.analysis.constants import ADX, DX, NEG_DI, POS_DI, NEG_DM_AVG, POS_DM_AVG, TR_AVG, NEG_DM, POS_DM, \
+    TR, PERIODS, SPAN, POSITION, SIGNAL, TRENDING, RANGING
 from app.analysis.technical_analysis import TechnicalAnalysis, ParametersNotCompleteException
 
 class AdxAnalysis(TechnicalAnalysis):
@@ -13,7 +14,7 @@ class AdxAnalysis(TechnicalAnalysis):
     _dm_avg_columns: List[str] = [TR_AVG, POS_DM_AVG, NEG_DM_AVG]
     _dx_columns: List[str] = [POS_DI, NEG_DI, DX]
 
-    def __init__(self, queue: Queue, periods: int, span: int, config: Dict[str, Any], data_frame: DataFrame):
+    def __init__(self, queue: Queue, periods: int, signal: float, span: int, config: Dict[str, Any], data_frame: DataFrame):
 
         data_frame[TR] = 0
         data_frame[POS_DM] = 0
@@ -25,10 +26,12 @@ class AdxAnalysis(TechnicalAnalysis):
         data_frame[NEG_DI] = 0
         data_frame[DX] = 0
         data_frame[ADX] = 0
+        data_frame[POSITION] = None
 
         super().__init__(config, data_frame)
         
         self._span: int = span
+        self._signal: float = signal
 
         self._periods: int = periods
         self._previous_periods: int = periods - 1
@@ -74,16 +77,20 @@ class AdxAnalysis(TechnicalAnalysis):
 
         return tr_avg, pos_dm_avg, neg_dm_avg
 
-    def _calculate_adx(self, index: int, dx: float, prev_adx: float) -> float:
+    def _calculate_adx(self, index: int, dx: float, prev_adx: float) -> Tuple[float, str]:
+        adx: float = 0.0
+        
         if index == self._adx_period_start:
-            return self._data_frame.loc[self._periods: self._adx_period_start, DX].mean()
+            adx = self._data_frame.loc[self._periods: self._adx_period_start, DX].mean()
         else:
-            return (dx + (prev_adx * self._previous_periods)) / self._periods
+            adx = (dx + (prev_adx * self._previous_periods)) / self._periods
+
+        return adx, TRENDING if adx >= self._signal else RANGING
 
     def run_analysis(self) -> None:
 
-        for index, (_, high, low, close, _, tr, pos_dm, neg_dm, tr_avg, pos_dm_avg, neg_dm_avg, _, _, _, _) in self._data_frame[1:].iterrows():
-            _, prev_high, prev_low, prev_close, _, prev_tr, _, _, prev_tr_avg, prev_pos_dm_avg, prev_neg_dm_avg, _, _, _, prev_adx = \
+        for index, (_, high, low, close, _, tr, pos_dm, neg_dm, tr_avg, pos_dm_avg, neg_dm_avg, _, _, _, _, _) in self._data_frame[1:].iterrows():
+            _, prev_high, prev_low, prev_close, _, prev_tr, _, _, prev_tr_avg, prev_pos_dm_avg, prev_neg_dm_avg, _, _, _, prev_adx, _ = \
                  self._data_frame.iloc[index - 1]
 
             tr, pos_dm, neg_dm = self._calculate_dm(high, low, prev_high, prev_low, prev_close)
@@ -99,25 +106,27 @@ class AdxAnalysis(TechnicalAnalysis):
                 self._data_frame.loc[index, self._dx_columns] = pos_di, neg_di, dx
 
                 if index >= self._adx_period_start:
-                    self._data_frame.loc[index, ADX] = self._calculate_adx(index, dx, prev_adx) 
+                    self._data_frame.loc[index, [ADX, POSITION]] = self._calculate_adx(index, dx, prev_adx)
 
-    def return_values(self) -> Dict[str, Tuple[float, float, float, float, float, float, float, List[float]]]:
-        adx: DataFrame = self._data_frame.tail(self._span)[ADX]
-        pos_di: DataFrame = self._data_frame.tail(self._span)[POS_DI]
-        neg_di: DataFrame = self._data_frame.tail(self._span)[NEG_DI]
+
+    def return_values(self) -> Dict[str, Union[Tuple[float, float, float, float, float, float, float, List[float]], Tuple[bool, bool]]]:
+        tail_df: DataFrame = self._data_frame.tail(self._span)
+        pos_df: DataFrame = tail_df[POSITION]
 
         return {
-            ADX: self._return_quantative_values(self._span, adx),
-            POS_DI: self._return_quantative_values(self._span, pos_di),
-            NEG_DI: self._return_quantative_values(self._span, neg_di)
+            ADX: self._return_quantative_values(self._span, tail_df[ADX]),
+            POS_DI: self._return_quantative_values(self._span, tail_df[POS_DI]),
+            NEG_DI: self._return_quantative_values(self._span, tail_df[NEG_DI]),
+            POSITION: (pos_df.iloc[-1], pos_df.iloc[-2])
         }
 
 def adx_analyis(queue: Queue, config: Dict[str, Any], data_frame: DataFrame) -> None:
     periods: Optional[int] = config.get(PERIODS)
     span: Optional[int] = config.get(SPAN)
+    signal: Optional[int] = config.get(SIGNAL)
 
-    if periods and span:
-        adx: AdxAnalysis = AdxAnalysis(queue, periods, span, config, data_frame.copy())
+    if periods and span and signal:
+        adx: AdxAnalysis = AdxAnalysis(queue, periods, signal, span, config, data_frame.copy())
         adx.run_analysis()
         queue.put(adx.return_values())
     else:
@@ -127,7 +136,7 @@ if __name__ == "__main__":
     from app.analysis.mock_constants import TESLA
 
     queue: Queue = Queue()
-    adx_analyis(queue, {PERIODS: 7, SPAN: 7}, TESLA)
+    adx_analyis(queue, {PERIODS: 7, SPAN: 7, SIGNAL: 50}, TESLA)
     print(queue.get())
 
 

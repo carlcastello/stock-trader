@@ -42,14 +42,14 @@ class MacdAnalysis(TechnicalAnalysis):
 
         self._data_frame[POSITION] = self._data_frame[MACD] >= self._data_frame[SIGNAL]
 
-    def return_values(self) -> Dict[str, Union[Tuple[float, float, float, float, float, float, float, List[float]], Tuple[bool, bool, List[bool]]]]:
+    def return_values(self) -> Dict[str, Union[Tuple[float, float, float, float, float, float, float, List[float]], Tuple[bool, bool]]]:
         tail_df: DataFrame = self._data_frame[self._macd_columns].tail(self._span)        
         position_df = tail_df[POSITION]
 
         return {
             MACD: self._return_quantative_values(self._span, tail_df[MACD]),
             SIGNAL: self._return_quantative_values(self._span, tail_df[SIGNAL]),
-            POSITION: (position_df.iloc[-1], position_df.iloc[-2], position_df.tolist())
+            POSITION: (position_df.iloc[-1], position_df.iloc[-2])
         }
 
 def macd_analysis(queue: Queue,
