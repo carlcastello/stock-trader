@@ -52,7 +52,7 @@ def _run_analysis(configs: Dict[str, Any], time_stock_series_df: DataFrame) -> D
         ADX: adx_queue.get()
     }
 
-def _interpret_analysis(results: Dict[str, Dict[str, Tuple]]) ->  Optional[str]:
+def _interpret_analysis(results: Dict[str, Dict[str, Tuple]]) ->  str:
     adx_curr_pos, adx_prev_pos = results[ADX][POSITION]
     rsi_curr_pos, rsi_prev_pos = results[RSI][POSITION]
     macd_curr_pos, macd_prev_pos = results[MACD][POSITION]
@@ -80,7 +80,7 @@ def analysis(now: Datetime,
     configs: Dict[str, Any] = _fetch_analysis_configs(symbol, *firebase)
 
     analysis_results: Dict[str, Dict[str, Tuple]] = _run_analysis(configs, time_stock_series_df)
-    message: Optional[str] = _interpret_analysis(analysis_results)
+    message: str = _interpret_analysis(analysis_results)
 
     if message:
         slack_trader_bot.post(now, message, analysis_results)
