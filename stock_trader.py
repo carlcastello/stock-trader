@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 from os import path, environ
 from dotenv import load_dotenv
+from multiprocessing import Process
 
 from typing import Optional, List, Set, Tuple, Dict
 
@@ -39,7 +40,14 @@ def main() -> None:
             'serviceAccount': fb_service_account
         }
 
-        start_app(symbol, alpha_vantage_id, web_hook_url, firebase_config)
+        process: Process = Process(
+            name=str(symbol),
+            target=start_app,
+            args=(symbol, alpha_vantage_id, web_hook_url, firebase_config)
+        )
+        process.start()
+
+        print(f'Running Process {process.pid}...')
 
 if __name__ == '__main__':
     main()

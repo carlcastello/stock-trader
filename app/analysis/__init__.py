@@ -80,10 +80,10 @@ def analysis(now: Datetime,
     configs: Dict[str, Any] = _fetch_analysis_configs(symbol, *firebase)
 
     analysis_results: Dict[str, Dict[str, Tuple]] = _run_analysis(configs, time_stock_series_df)
-    message: List[str] = _interpret_analysis(analysis_results)
+    messages: List[str] = _interpret_analysis(analysis_results)
 
-    if message:
-        slack_trader_bot.post(now, message, analysis_results)
+    if messages:
+        slack_trader_bot.post(now, messages, analysis_results)
 
 if __name__ == "__main__":
     from os import path, environ
