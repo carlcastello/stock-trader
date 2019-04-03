@@ -1,4 +1,3 @@
-# Firebase DB key
 TICKER: str = 'TICKER'
 TIMEZONE: str = 'TIMEZONE'
 INTERVAL: str = 'INTERVAL'

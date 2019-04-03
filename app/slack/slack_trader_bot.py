@@ -6,12 +6,13 @@ from app.analysis.constants import ADX, POS_DI, NEG_DI, RSI, MACD, SIGNAL, POSIT
 
 class SlackTraderBot(SlackAPI):
 
-    _color: str = '#439FE0'
+     _color: str = '#439FE0'
 
     _footer_name: str = 'StockTraderBot'
     _footer_icon: str = 'https://platform.slack-edge.com/img/default_application_icon.png'
 
     _order: List[str] = [ADX, POS_DI, NEG_DI, RSI, MACD, SIGNAL, POSITION, OBV]
+    _quantitative_feilds: List[str] = ['Curr', 'Prev', 'Min', 'Max', 'Mean', 'Slope']
 
     _boolead_analysis: List[str] = [OBV]
     _boolean_fields: List[str] = ['Current']
@@ -49,27 +50,30 @@ class SlackTraderBot(SlackAPI):
             'ts': '123456789'
         }
 
-
     def post(self, suggestion: str, results: Dict[str, Any]) -> None:
         attatchments: List[Dict[str, Any]] = []
-        
         for key in self._order:
             result: Optional[Any] = results.get(key)
+            if result and len(result) == len(self._quantitative_feilds) + 1:
+                fallback: str = f'{key}:'
+                fields: List[Dict[str, Any]] = []
 
-            fields: List[str] = []
-        
-            if key in self._qualitative_analysis:
-                fields = self._qualitative_fields
-            elif key in self._quantitative_analysis:
-                fields = self._quantitative_fields
-            elif key in self._boolead_analysis:
-                fields = self._boolean_fields
+                for index in range(len(self._quantitative_feilds)):
+                    curr_field: str = self._quantitative_feilds[index]
+                    curr_value: float = result[index]
 
-            if result and fields:
-                attatchments.append(self._build_payload(key, fields, result))
+                    fallback += f' {curr_field}(`{curr_value}`)'
+                    fields.append({ 'title': curr_field, 'value': f'`{curr_value}`', 'short': True })
+
+                fallback += '\n'
+                attatchments.append({
+                    'title': key,
+                    'fallback': fallback,
+                    'fields': fields
+                })
 
         self._post({
-            'text': f'*Symbol*: `{self._symbol}` \n *Suggestion*: `{suggestion}` \n <!channel|channel>',
+            'text': f'*Suggestion*: `{suggestion}`',
             'attachments': attatchments
         })
 
