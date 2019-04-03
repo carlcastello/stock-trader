@@ -90,8 +90,7 @@ if __name__ == "__main__":
     from dotenv import load_dotenv
     from pyrebase.pyrebase import initialize_app, Firebase, Auth
     
-    from constants import COFING_SPREAD_SHEET_ID, WEB_HOOK_URL  
-    from app.constants import FIREBASE_CONFIG
+    from constants import COFING_SPREAD_SHEET_ID, WEB_HOOK_URL, FB_API_KEY, FB_AUTH_DOMAIN, FB_DB_URL, FB_SERVICE_ACCOUNT, FB_STORAGE_BUCKET
     from app.analysis.mock_constants import TESLA
 
 
@@ -102,7 +101,20 @@ if __name__ == "__main__":
     config_spread_sheet_id: str = environ.get(COFING_SPREAD_SHEET_ID, '')
     web_hook_url: str = environ.get(WEB_HOOK_URL, '')
 
-    fb_app: Firebase = initialize_app(FIREBASE_CONFIG)
+    fb_api_key: Optional[str] = environ.get(FB_API_KEY, '')
+    fb_auth_domain: Optional[str] = environ.get(FB_AUTH_DOMAIN, '')
+    fb_db_url: Optional[str] = environ.get(FB_DB_URL, '')
+    fb_service_account: Optional[str] = environ.get(FB_SERVICE_ACCOUNT, '')
+    fb_storage_bucket: Optional[str] = environ.get(FB_STORAGE_BUCKET, '')
+
+
+    fb_app: Firebase = initialize_app({
+        'apiKey': fb_api_key,
+        'authDomain': fb_auth_domain,
+        'databaseURL': fb_db_url,
+        'storageBucket': fb_storage_bucket,
+        'serviceAccount': fb_service_account
+    })
 
     fb_auth: Auth = fb_app.auth()
     fb_project_token: bytes = fb_auth.create_custom_token('7b89e2cf-0139-4ce2-95d8-d0f79bdf24fc')
