@@ -82,8 +82,8 @@ def analysis(now: Datetime,
     analysis_results: Dict[str, Dict[str, Tuple]] = _run_analysis(configs, time_stock_series_df)
     messages: List[str] = _interpret_analysis(analysis_results)
 
-    if messages:
-        slack_trader_bot.post(now, messages, analysis_results)
+    slack_trader_bot.post(now, messages, analysis_results)
+        
 
 if __name__ == "__main__":
     from os import path, environ

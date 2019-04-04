@@ -58,7 +58,7 @@ class Ticker:
                 self._db.child(f'{self._symbol}/{SHOULD_TRADE}').get(self._auth_token).val() and \
                 self._current_date_time.weekday() < 5 and \
                 self._current_date_time >= self._opening_hours and \
-                self._current_date_time < self._closing_hours or True
+                self._current_date_time < self._closing_hours
 
             sleep(self._interval / 2)
 

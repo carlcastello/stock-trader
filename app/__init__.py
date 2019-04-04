@@ -19,7 +19,7 @@ def start_app(symbol: str, alpha_vantage_id: str, web_hook_url: str, firbase_con
     fb_project_token: bytes = fb_auth.create_custom_token('7b89e2cf-0139-4ce2-95d8-d0f79bdf24fc')
     fb_user: Dict[str, str] = fb_auth.sign_in_with_custom_token(fb_project_token)
     
-    def _ticker_callback(now: DateTime, auth_token: str) -> None: 
+    def _ticker_callback(now: DateTime, auth_token: str) -> None:
         time_stock_series_df, _ = time_series.get_intraday(
             symbol=symbol,
             interval='1min',
