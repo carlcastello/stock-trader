@@ -7,7 +7,7 @@ from typing import Optional, List, Set, Tuple, Dict
 
 from app import start_app
 from constants import SYMBOL, COFING_SPREAD_SHEET_ID, ALPHA_VANTAGE_ID, WEB_HOOK_URL, FB_API_KEY, \
-        FB_AUTH_DOMAIN, FB_DB_URL, FB_SERVICE_ACCOUNT, FB_STORAGE_BUCKET
+        FB_AUTH_DOMAIN, FB_DB_URL, FB_SERVICE_ACCOUNT, FB_STORAGE_BUCKET, PROJECT_ID
 
 def main() -> None:
     parser: ArgumentParser = ArgumentParser(description='Stock Trader program.')
@@ -19,6 +19,8 @@ def main() -> None:
     load_dotenv(path.join(file_path, f'env/.{parser.parse_args().symbol}'))
     load_dotenv(path.join(file_path, f'env/.COMMON'))
 
+    project_id: Optional[str] = environ.get(PROJECT_ID)
+
     alpha_vantage_id: Optional[str] = environ.get(ALPHA_VANTAGE_ID)
     symbol: Optional[str] = environ.get(SYMBOL)
     web_hook_url: Optional[str] = environ.get(WEB_HOOK_URL)
@@ -29,7 +31,7 @@ def main() -> None:
     fb_service_account: Optional[str] = environ.get(FB_SERVICE_ACCOUNT)
     fb_storage_bucket: Optional[str] = environ.get(FB_STORAGE_BUCKET)
 
-    if symbol and alpha_vantage_id and web_hook_url and \
+    if symbol and alpha_vantage_id and web_hook_url and project_id and \
         fb_api_key and fb_auth_domain and fb_db_url and fb_service_account and fb_storage_bucket:
 
         firebase_config: Dict[str, str] = {
@@ -41,7 +43,7 @@ def main() -> None:
         }
 
         print(f'Running Process {getpid()}...')
-        start_app(symbol, alpha_vantage_id, web_hook_url, firebase_config)
+        start_app(symbol, project_id, alpha_vantage_id, web_hook_url, firebase_config)
 
 if __name__ == '__main__':
     main()
