@@ -51,7 +51,7 @@ class SlackTraderBot(SlackAPI):
 
         message: str = '\n'.join(messages)
         self._post({
-            'text': f'<!channel|channel> \n *Date*: {now.strftime("%Y-%d-%m %H:%M")} \n *Message*: ```{message}```',
+            'text': f'<!channel|channel> \n *Date*: {now.strftime("%Y-%d-%m %H:%M:%S")} \n *Message*: ```{message}```',
             'attachments': attachments
         })
 
