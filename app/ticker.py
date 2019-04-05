@@ -35,12 +35,10 @@ class Ticker:
 
         self._opening_hours: DateTime = self.__create_datetime(values[OPENING_HOURS])
         self._closing_hours: DateTime = self.__create_datetime(values[CLOSING_HOURS])
-    
+
     def __create_datetime(self, hour: str) -> DateTime:
-        return DateTime.strptime(
-            f'{self._current_date_time.date()} {hour}',
-            '%Y-%m-%d %I:%M %p'
-        ).replace(tzinfo=self._timezone)
+        time = f'{self._current_date_time.date()} {hour}' 
+        return self._timezone.localize(DateTime.strptime(time, '%Y-%m-%d %I:%M %p'))
 
     def __update_class_variables(self) -> None:
         prev_date_time = self._current_date_time
@@ -57,9 +55,8 @@ class Ticker:
             self._should_callback: bool = \
                 self._db.child(f'{self._symbol}/{SHOULD_TRADE}').get(self._auth_token).val() and \
                 self._current_date_time.weekday() < 5 and \
-                self._current_date_time >= self._opening_hours and \
-                self._current_date_time < self._closing_hours
-
+                self._opening_hours <= self._current_date_time < self._closing_hours
+                
             sleep(self._interval / 2)
 
     def _ticker(self) -> None:
