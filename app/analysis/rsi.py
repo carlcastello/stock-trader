@@ -29,7 +29,6 @@ class RsiAnalysis(TechnicalAnalysis):
 
         self._osc_max: float = osc_max
         self._osc_min: float = osc_min
-
         self._periods: int = periods
         self._prev_periods: int = periods - 1
 
