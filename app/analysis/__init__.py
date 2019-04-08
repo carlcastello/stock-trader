@@ -59,8 +59,7 @@ def _interpret_analysis(results: Dict[str, Dict[str, Tuple]]) ->  List[str]:
 
     messages: List[str] = []
 
-
-    if adx_curr_pos != adx_prev_pos and rsi_curr_pos != rsi_prev_pos and macd_curr_pos != macd_prev_pos:
+    if adx_curr_pos != adx_prev_pos or rsi_curr_pos != rsi_prev_pos or macd_curr_pos != macd_prev_pos:
         adx_title: str = f'*{ADX}*' if adx_curr_pos != adx_prev_pos else ADX
         rsi_title: str = f'*{RSI}*' if rsi_curr_pos != rsi_prev_pos else RSI
         macd_title: str = f'*{MACD}*' if macd_curr_pos != macd_prev_pos else MACD
