@@ -59,14 +59,17 @@ def _interpret_analysis(results: Dict[str, Dict[str, Tuple]]) ->  List[str]:
 
     messages: List[str] = []
 
-    if adx_curr_pos != adx_prev_pos:
-        messages.append(f'*{ADX}* - Previous: {adx_prev_pos}, Current: {adx_curr_pos}\n')
-    
-    if rsi_curr_pos != rsi_prev_pos:
-        messages.append(f'*{RSI}* - Previous: {rsi_prev_pos}, Current: {rsi_curr_pos}\n')
 
-    if macd_curr_pos != macd_prev_pos:
-        messages.append(f'*{MACD}* - Previous: {macd_prev_pos}, Current: {macd_curr_pos}\n')
+    if adx_curr_pos != adx_prev_pos and rsi_curr_pos != rsi_prev_pos and macd_curr_pos != macd_prev_pos:
+        adx_title: str = f'*{ADX}*' if adx_curr_pos != adx_prev_pos else ADX
+        rsi_title: str = f'*{RSI}*' if rsi_curr_pos != rsi_prev_pos else RSI
+        macd_title: str = f'*{MACD}*' if macd_curr_pos != macd_prev_pos else MACD
+
+        messages = [
+            f'{adx_title} - Previous: {adx_prev_pos}, Current: {adx_curr_pos}\n',
+            f'{rsi_title} - Previous: {rsi_prev_pos}, Current: {rsi_curr_pos}\n',
+            f'{macd_title} - Previous: {macd_prev_pos}, Current: {macd_curr_pos}\n'
+        ]
 
     return messages
 
