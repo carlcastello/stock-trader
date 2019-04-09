@@ -6,7 +6,7 @@ from typing import Tuple, Optional, Dict, Any, List, Union
 
 from app.analysis.technical_analysis import TechnicalAnalysis, ParametersNotCompleteException
 from app.analysis.constants import RSI, RS, CLOSE, PERIODS, SPAN, PREV_AVG_GAIN, PREV_AVG_LOSS, AVG_GAIN, AVG_LOSS, \
-    POSITION, OSC_MIN, OSC_MAX, OVER_BOUGHT, OVER_SOLD, RANGING
+    POSITION, OSC_MIN, OSC_MAX, OVER_BOUGHT, OVER_SOLD, RANGING, MIDDLE, OSC_MID
 
 class RsiAnalysis(TechnicalAnalysis):
 
@@ -15,7 +15,7 @@ class RsiAnalysis(TechnicalAnalysis):
 
     _rsi_columns: List[str] = [AVG_GAIN, AVG_LOSS, RS, RSI, POSITION]
 
-    def __init__(self, periods: int, osc_min: float, osc_max: float, span: int, config: Dict[str, Any] , data_frame: DataFrame):
+    def __init__(self, periods: int, osc_min: float, osc_mid: float, osc_max: float, span: int, config: Dict[str, Any] , data_frame: DataFrame):
  
         data_frame[AVG_GAIN] = nan
         data_frame[AVG_LOSS] = nan
@@ -28,6 +28,7 @@ class RsiAnalysis(TechnicalAnalysis):
         self._span = span
 
         self._osc_max: float = osc_max
+        self._osc_mid: float = osc_mid
         self._osc_min: float = osc_min
         self._periods: int = periods
         self._prev_periods: int = periods - 1
@@ -63,8 +64,10 @@ class RsiAnalysis(TechnicalAnalysis):
         rsi: float = 100 - (100 / (1 + rs))
         return rs, rsi
 
-    def _calculate_position(self, rsi: float) -> str:
-        if rsi <= self._osc_min:
+    def _calculate_position(self, rsi: float, prev_rsi: float) -> str:
+        if prev_rsi <= self._osc_mid <= rsi or prev_rsi >= self._osc_mid >= rsi:
+            return MIDDLE
+        elif rsi <= self._osc_min:
             return OVER_SOLD
         elif rsi >= self._osc_max:
             return OVER_BOUGHT
@@ -76,16 +79,16 @@ class RsiAnalysis(TechnicalAnalysis):
         initial_rs, initial_rsi = self._calculate_rsi(initial_average_gain, initial_average_loss)
 
         self._data_frame.loc[self._periods, self._rsi_columns] = \
-            initial_average_gain, initial_average_loss, initial_rs, initial_rsi, self._calculate_position(initial_rsi)
+            initial_average_gain, initial_average_loss, initial_rs, initial_rsi, self._calculate_position(initial_rsi, self._osc_mid)
 
         for index, (_, _, _, close, _, avg_gain, avg_loss, _, _, _) in self._data_frame[self._periods + 1:].iterrows():
-            _, _, _, prev_close, _, prev_avg_gain, prev_avg_loss, _, _, _ = self._data_frame.iloc[index - 1]
+            _, _, _, prev_close, _, prev_avg_gain, prev_avg_loss, _, prev_rsi, _ = self._data_frame.iloc[index - 1]
 
             difference: float = prev_close - close
             avg_gain, avg_loss = self._calculate_averages(difference, prev_avg_gain, prev_avg_loss)
             rs, rsi = self._calculate_rsi(avg_gain, avg_loss)
 
-            self._data_frame.loc[index, self._rsi_columns] = avg_gain, avg_loss, rs, rsi, self._calculate_position(rsi)
+            self._data_frame.loc[index, self._rsi_columns] = avg_gain, avg_loss, rs, rsi, self._calculate_position(rsi, prev_rsi)
 
     def return_values(self) -> Dict[str, Union[Tuple[float, float, float, float, float, float, float, List[float]], Tuple[bool, bool]]]:
         tail_df: DataFrame = self._data_frame.tail(self._span)
@@ -100,9 +103,10 @@ def rsi_analysis(queue: Queue, config: Dict[str, Any], data_frame: DataFrame) ->
     span: Optional[int] = config.get(SPAN)
     osc_min: Optional[float] = config.get(OSC_MIN)
     osc_max: Optional[float] = config.get(OSC_MAX)
+    osc_mid: Optional[float] = config.get(OSC_MID)
 
-    if periods and span and osc_min and osc_max:
-        rsi: RsiAnalysis = RsiAnalysis(periods, osc_min, osc_max, span, config, data_frame.copy())
+    if periods and span and osc_min and osc_mid and osc_max:
+        rsi: RsiAnalysis = RsiAnalysis(periods, osc_min, osc_mid, osc_max, span, config, data_frame.copy())
         rsi.run_analysis()
         queue.put(rsi.return_values())
     else:

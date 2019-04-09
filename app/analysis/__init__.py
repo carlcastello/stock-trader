@@ -7,7 +7,7 @@ from typing import Optional, List, Dict, Any, Tuple, Callable
 
 from app.google.google_sheet import GoogleSheet, Result
 from app.slack.slack_trader_bot import SlackTraderBot 
-from app.analysis.constants import MACD, RSI, OBV, ADX, POSITION, RANGING, OVER_BOUGHT, OVER_SOLD, TRENDING
+from app.analysis.constants import MACD, RSI, OBV, ADX, POSITION
 from app.analysis.macd import macd_analysis
 from app.analysis.rsi import rsi_analysis
 from app.analysis.obv import obv_analysis
